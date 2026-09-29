@@ -1,7 +1,7 @@
 # Sött
 
-Ein ruhiges Match-3-Spiel für iOS im Stil von Lagom: warme Papierfarben, gedämpfte Bonbons,
-runde Schrift, keine Hektik. Arbeitstitel „Sött“ (schwedisch für „süß“).
+Ein Match-3-Spiel für iOS im bunten Bonbon-Look: Himmel mit Wolken, glänzende Bonbons,
+blaues Banner mit Zügen und Zielen. Arbeitstitel „Sött“ (schwedisch für „süß“).
 
 <p>
   <img src="docs/screenshots/1-levels.png" width="200">
@@ -15,10 +15,29 @@ Die Screenshots erzeugt die CI im iPhone-Simulator (`scripts/screenshots.sh`).
 ## Projekt öffnen
 
 1. `Soett.xcodeproj` in Xcode 16 oder neuer öffnen.
-2. Unter *Signing & Capabilities* dein Team wählen und die Bundle-ID `com.example.soett` anpassen.
+2. Unter *Signing & Capabilities* dein Team wählen und bei Bedarf die Bundle-ID `de.vcoder001.soett` anpassen.
 3. Ziel „Soett“ auf einem iPhone-Simulator oder Gerät starten.
 
 Die Spiellogik liegt im lokalen Swift-Paket `Match3Core`, das Xcode automatisch einbindet.
+
+## TestFlight
+
+Der Workflow `.github/workflows/testflight.yml` baut bei jeder Änderung an der App ein Release-Archiv
+und lädt es zu App Store Connect hoch (`scripts/testflight.sh`). Signiert wird automatisch über einen
+App-Store-Connect-API-Schlüssel, Zertifikate oder Profile liegen nicht im Repo.
+
+Einmalig einrichten:
+
+1. Auf developer.apple.com unter *Identifiers* die App-ID `de.vcoder001.soett` anlegen.
+2. In App Store Connect unter *Apps* eine neue iOS-App mit dieser Bundle-ID anlegen.
+3. In App Store Connect unter *Benutzer und Zugriff → Integrationen → App Store Connect API* einen
+   Team-Schlüssel mit der Rolle *Admin* erzeugen und die `.p8`-Datei laden.
+4. Im GitHub-Repo unter *Settings → Secrets and variables → Actions* vier Secrets anlegen:
+   `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (kompletter Inhalt der `.p8`-Datei) und
+   `APPLE_TEAM_ID` (steht auf developer.apple.com unter *Membership*).
+
+Ohne diese Secrets baut der Workflow nur ein unsigniertes Archiv als Probe. Die Build-Nummer ist die
+Laufnummer des Workflows, die Version steht in `MARKETING_VERSION` im Xcode-Projekt.
 
 ## Aufbau
 

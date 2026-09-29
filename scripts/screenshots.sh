@@ -3,7 +3,7 @@
 # into docs/screenshots. Needs macOS with Xcode.
 set -euo pipefail
 OUT=docs/screenshots
-BUNDLE=com.example.soett
+BUNDLE=de.vcoder001.soett
 mkdir -p "$OUT"
 
 UDID=$(xcrun simctl list devices available -j | python3 -c '
