@@ -22,6 +22,9 @@ final class GameController: ObservableObject, GameSceneDelegate {
     @Published private(set) var bonus = 0
     @Published private(set) var showResult = false
     @Published var combo: ComboBanner?
+    /// Stars the running score has already passed (drives the HUD meter and its little fanfare).
+    @Published private(set) var starsReached = 0
+    @Published private(set) var showSugarRush = false
 
     var onFinish: ((Level, _ stars: Int, _ score: Int) -> Void)?
 
@@ -51,7 +54,10 @@ final class GameController: ObservableObject, GameSceneDelegate {
         status = .playing
         stars = 0
         bonus = 0
+        starsReached = 0
+        showSugarRush = false
         showResult = false
+        SoundManager.shared.duckMusic(false)
         combo = nil
         scene.reset(board: game.board)
         scene.scheduleHint()
@@ -76,7 +82,9 @@ final class GameController: ObservableObject, GameSceneDelegate {
         guard status == .playing else { return nil }
         let result = game.swap(from, to)
         if result.isValid {
-            withAnimation(.snappy) { movesLeft = game.movesLeft }
+            // Moves spent by the sugar rush count down while it plays.
+            let rushMoves = result.sugarRush.reduce(0) { $0 + $1.movesSpent }
+            withAnimation(.snappy) { movesLeft = game.movesLeft + rushMoves }
         }
         return result
     }
@@ -84,11 +92,29 @@ final class GameController: ObservableObject, GameSceneDelegate {
     func sceneDidApply(_ step: CascadeStep) {
         collectedShown += step.collected.count
         withAnimation(.snappy) {
+            if step.movesSpent > 0 { movesLeft = max(0, movesLeft - step.movesSpent) }
             score += step.scoreGained
             goals = GoalProgress.evaluate(goals: level.goals, score: score, board: step.board,
                                           collected: collectedShown, initialJelly: game.initialJelly,
                                           initialChocolate: game.initialChocolate)
         }
+        updateStarsReached()
+    }
+
+    func sceneDidStartSugarRush() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { showSugarRush = true }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            withAnimation(.easeOut(duration: 0.3)) { showSugarRush = false }
+        }
+    }
+
+    private func updateStarsReached() {
+        let reached = level.starScores.filter { score >= $0 }.count
+        guard reached > starsReached else { return }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.45)) { starsReached = reached }
+        SoundManager.shared.play(.star, pitch: 1 + Double(reached - 1) * 0.12, volume: 0.8)
+        Haptics.special()
     }
 
     func sceneDidShow(_ word: ComboWord) {
@@ -108,10 +134,12 @@ final class GameController: ObservableObject, GameSceneDelegate {
             goals = game.goalProgress
             movesLeft = game.movesLeft
         }
+        updateStarsReached()
         guard game.status != .playing, status == .playing else { return }
         status = game.status
         stars = game.stars
         bonus = move.bonusScore
+        SoundManager.shared.duckMusic(true)
         if status == .won {
             SoundManager.shared.play(.win)
             Haptics.success()

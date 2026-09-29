@@ -8,6 +8,7 @@ struct SoettApp: App {
     init() {
         UserDefaults.standard.register(defaults: [
             SettingsKey.sound: true,
+            SettingsKey.music: true,
             SettingsKey.voice: true,
             SettingsKey.haptics: true,
         ])
@@ -34,10 +35,17 @@ enum Demo {
     }
 
     static var autoplay: Bool { UserDefaults.standard.bool(forKey: "autoplay") }
+
+    /// Opens the start card of this level on the map.
+    static var intro: Level? {
+        let id = UserDefaults.standard.integer(forKey: "demoIntro")
+        return Level.campaign.first { $0.id == id }
+    }
 }
 
 enum SettingsKey {
     static let sound = "sound"
+    static let music = "music"
     static let voice = "voice"
     static let haptics = "haptics"
 }

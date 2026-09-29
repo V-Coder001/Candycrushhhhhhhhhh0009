@@ -72,6 +72,16 @@ public struct Level: Hashable, Codable, Identifiable {
 
     public var palette: [CandyColor] { Array(CandyColor.allCases.prefix(max(3, min(colors, 6)))) }
 
+    /// Score-only levels run until the last move, like in the classic game, so there is room for
+    /// three stars. Every other level ends as soon as its goals are met and the leftover moves
+    /// turn into a sugar rush.
+    public var playsAllMoves: Bool {
+        goals.allSatisfy { goal in
+            if case .score = goal { return true }
+            return false
+        }
+    }
+
     public var ingredientsRequired: Int {
         goals.reduce(0) { total, goal in
             if case let .collectIngredients(count) = goal { return total + count }

@@ -48,6 +48,32 @@ final class CandyArt {
         return SKTexture(image: image)
     }()
 
+    /// Soft light rays, used behind freshly made specials.
+    private(set) lazy var raysTexture: SKTexture = {
+        let size = CGSize(width: 128, height: 128)
+        let image = UIGraphicsImageRenderer(size: size).image { context in
+            let cg = context.cgContext
+            let center = CGPoint(x: 64, y: 64)
+            cg.saveGState()
+            let rays = UIBezierPath()
+            for i in 0..<12 {
+                let a = CGFloat(i) / 12 * .pi * 2
+                let w: CGFloat = .pi / 22
+                rays.move(to: center)
+                rays.addLine(to: CGPoint(x: center.x + cos(a - w) * 64, y: center.y + sin(a - w) * 64))
+                rays.addLine(to: CGPoint(x: center.x + cos(a + w) * 64, y: center.y + sin(a + w) * 64))
+                rays.close()
+            }
+            rays.addClip()
+            let colors = [UIColor(hex: 0xFFF6C8).cgColor, UIColor(hex: 0xFFE27A, alpha: 0).cgColor] as CFArray
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+            cg.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: 64,
+                                  options: [])
+            cg.restoreGState()
+        }
+        return SKTexture(image: image)
+    }()
+
     private(set) lazy var sparkTexture: SKTexture = {
         let size = CGSize(width: 24, height: 24)
         let image = UIGraphicsImageRenderer(size: size).image { context in

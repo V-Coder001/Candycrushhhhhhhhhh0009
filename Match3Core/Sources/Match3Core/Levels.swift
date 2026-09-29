@@ -2,7 +2,7 @@ extension Level {
     /// The built-in campaign. Layout legend: see `Level`.
     public static let campaign: [Level] = [
         Level(id: 1, name: "Erster Bissen", moves: 20, colors: 5,
-              goals: [.score(2_500)], starScores: [2_500, 6_000, 9_500],
+              goals: [.score(2_500)], starScores: [2_500, 20_000, 34_000],
               layout: [
                   ".........",
                   ".........",
@@ -15,7 +15,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 2, name: "Ruhige Hand", moves: 16, colors: 5,
-              goals: [.score(5_000)], starScores: [5_000, 9_000, 13_000],
+              goals: [.score(5_000)], starScores: [5_000, 13_000, 18_000],
               layout: [
                   "##.....##",
                   "#.......#",
@@ -28,7 +28,7 @@ extension Level {
                   "##.....##",
               ]),
         Level(id: 3, name: "Gelee", moves: 22, colors: 5,
-              goals: [.clearJelly], starScores: [3_000, 9_000, 15_000],
+              goals: [.clearJelly], starScores: [3_000, 19_000, 27_000],
               layout: [
                   ".........",
                   ".........",
@@ -41,7 +41,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 4, name: "Kirschernte", moves: 25, colors: 5,
-              goals: [.collectIngredients(2)], starScores: [3_000, 12_000, 20_000],
+              goals: [.collectIngredients(2)], starScores: [3_000, 24_000, 35_000],
               layout: [
                   "....i....",
                   ".........",
@@ -54,7 +54,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 5, name: "Gitter", moves: 24, colors: 5,
-              goals: [.clearJelly], starScores: [4_000, 12_000, 18_000],
+              goals: [.clearJelly], starScores: [4_000, 20_000, 35_000],
               layout: [
                   ".........",
                   ".........",
@@ -67,7 +67,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 6, name: "Zuckerwürfel", moves: 18, colors: 5,
-              goals: [.score(9_000)], starScores: [9_000, 13_000, 17_000],
+              goals: [.score(9_000)], starScores: [9_000, 15_000, 24_000],
               layout: [
                   ".........",
                   ".........",
@@ -80,7 +80,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 7, name: "Schokolade", moves: 25, colors: 5,
-              goals: [.clearChocolate, .clearJelly], starScores: [5_000, 16_000, 26_000],
+              goals: [.clearChocolate, .clearJelly], starScores: [5_000, 22_000, 34_000],
               layout: [
                   ".........",
                   ".........",
@@ -93,7 +93,7 @@ extension Level {
                   "ccc...ccc",
               ]),
         Level(id: 8, name: "Sanduhr", moves: 28, colors: 5,
-              goals: [.clearJelly], starScores: [6_000, 12_000, 18_000],
+              goals: [.clearJelly], starScores: [6_000, 16_000, 22_000],
               layout: [
                   "jjjjjjjjj",
                   "#jjjjjjj#",
@@ -106,7 +106,7 @@ extension Level {
                   "jjjjjjjjj",
               ]),
         Level(id: 9, name: "Nussknacker", moves: 30, colors: 5,
-              goals: [.collectIngredients(3)], starScores: [6_000, 16_000, 26_000],
+              goals: [.collectIngredients(3)], starScores: [6_000, 29_000, 39_000],
               layout: [
                   "..h...i..",
                   ".........",
@@ -119,7 +119,7 @@ extension Level {
                   ".........",
               ], maxIngredientsOnBoard: 2),
         Level(id: 10, name: "Doppelschicht", moves: 25, colors: 5,
-              goals: [.clearJelly, .score(15_000)], starScores: [15_000, 22_000, 30_000],
+              goals: [.clearJelly, .score(15_000)], starScores: [15_000, 24_000, 43_000],
               layout: [
                   ".........",
                   ".........",
@@ -132,7 +132,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 11, name: "Gefangen", moves: 32, colors: 6,
-              goals: [.clearJelly], starScores: [8_000, 15_000, 22_000],
+              goals: [.clearJelly], starScores: [8_000, 19_000, 27_000],
               layout: [
                   ".........",
                   ".........",
@@ -145,7 +145,7 @@ extension Level {
                   ".........",
               ]),
         Level(id: 12, name: "Lagom", moves: 34, colors: 6,
-              goals: [.clearChocolate, .collectIngredients(2)], starScores: [10_000, 18_000, 26_000],
+              goals: [.clearChocolate, .collectIngredients(2)], starScores: [10_000, 15_000, 20_000],
               layout: [
                   "###.i.###",
                   "##.....##",

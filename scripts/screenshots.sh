@@ -27,7 +27,7 @@ xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --
   --wifiBars 3 --cellularBars 4 || true
 xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Soett.app
 
-run() { xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true; xcrun simctl launch "$UDID" "$BUNDLE" -sound NO -voice NO "$@"; }
+run() { xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true; xcrun simctl launch "$UDID" "$BUNDLE" -sound NO -music NO -voice NO "$@"; }
 shot() { xcrun simctl io "$UDID" screenshot "$OUT/$1.png"; }
 
 run; sleep 5; shot 1-levels
@@ -41,6 +41,9 @@ run -demoLevel 6 -demoSeed 11 -autoplay YES
 sleep 4; shot 4-play
 sleep 3
 kill -INT $REC; wait $REC || true
+
+run -demoIntro 3; sleep 5; shot 6-intro
+run -demoLevel 1 -demoSeed 4 -autoplay YES; sleep 70; shot 7-win
 
 xcrun simctl ui "$UDID" appearance dark
 run -demoLevel 12 -demoSeed 5; sleep 5; shot 5-dark

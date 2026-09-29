@@ -292,7 +292,10 @@ final class ObstacleAndGoalTests: XCTestCase {
         XCTAssertEqual(Set(result.steps[0].jellyHit), [Position(0, 0), Position(0, 1)])
         XCTAssertEqual(game.board.jellyRemaining, 0)
         XCTAssertEqual(game.status, .won)
-        XCTAssertEqual(result.bonusScore, game.movesLeft * Game.bonusPerMove)
+        XCTAssertEqual(game.movesLeft, 0, "leftover moves go into the sugar rush")
+        XCTAssertFalse(result.sugarRush.isEmpty)
+        XCTAssertEqual(result.sugarRush.reduce(0) { $0 + $1.movesSpent }, 9)
+        XCTAssertGreaterThanOrEqual(result.bonusScore, 9 * Game.bonusPerMove)
     }
 
     func testDoubleJellyNeedsTwoHits() {
@@ -378,11 +381,40 @@ final class ObstacleAndGoalTests: XCTestCase {
             "R G R",
             "B R Y",
         ])
-        let game = Game(level: testLevel(moves: 5, goals: [.score(10)]), board: board)
+        let game = Game(level: testLevel(moves: 1, goals: [.score(10)]), board: board)
         game.swap(Position(1, 1), Position(0, 1))
         XCTAssertEqual(game.status, .won)
-        XCTAssertEqual(game.stars, 2, "60 points + 4 moves bonus")
+        XCTAssertEqual(game.stars, 1, "60 points, below the second star")
         XCTAssertTrue(game.goalProgress[0].isMet)
+    }
+
+    func testScoreLevelKeepsGoingUntilTheLastMove() {
+        let board = Board.parse([
+            "R G R Y",
+            "B R Y B",
+            "Y B G R",
+        ])
+        let game = Game(level: testLevel(moves: 5, goals: [.score(10)]), board: board)
+        let result = game.swap(Position(1, 1), Position(0, 1))
+        XCTAssertTrue(result.isValid)
+        XCTAssertTrue(game.goalProgress[0].isMet)
+        XCTAssertEqual(game.status, .playing, "score levels use every move, so more stars stay reachable")
+        XCTAssertEqual(game.movesLeft, 4)
+    }
+
+    func testSugarRushFiresLeftoverSpecials() {
+        let board = Board.parse([
+            "jR jR G B",
+            "B G R Y|",
+            "Y B G R",
+        ])
+        let game = Game(level: testLevel(moves: 3, goals: [.clearJelly]), board: board)
+        let result = game.swap(Position(1, 2), Position(0, 2))
+        XCTAssertEqual(game.status, .won)
+        let fired = result.sugarRush.flatMap(\.activations)
+        XCTAssertTrue(fired.contains { $0.kind == .lineVertical }, "the striped candy left on the board goes off")
+        XCTAssertEqual(game.movesLeft, 0)
+        XCTAssertEqual(game.score, result.steps.reduce(0) { $0 + $1.scoreGained } + result.bonusScore)
     }
 
     func testRunningOutOfMovesLoses() {

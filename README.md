@@ -47,7 +47,8 @@ Laufnummer des Workflows, die Version steht in `MARKETING_VERSION` im Xcode-Proj
 | `App/` | SwiftUI-Oberfläche, SpriteKit-Spielfeld, Sound und Haptik |
 | `App/Scene/GameScene.swift` | Spielt jeden Zug als Animation ab (Tausch, Platzen, Fallen, Nachrutschen) |
 | `App/Scene/CandyArt.swift` | Zeichnet alle Bonbons im Code, jede Farbe hat eine eigene Form |
-| `App/Services/SoundManager.swift` | Platzhalter-Sounds per Synthese, Combo-Stimme per Sprachausgabe |
+| `App/Services/SoundManager.swift` | Soundeffekte mit Tonhöhe für Kettenreaktionen, Musik-Loop, Combo-Stimme |
+| `App/Sounds/` | Soundeffekte und Musik, erzeugt mit `scripts/make_sounds.py` (alles synthetisch, keine Lizenzen) |
 
 ## Regeln
 
@@ -55,6 +56,9 @@ Laufnummer des Workflows, die Version steht in `MARKETING_VERSION` im Xcode-Proj
 - Bonbons fallen nach, neue kommen von oben, Kettenreaktionen laufen automatisch weiter.
 - Ein Tausch ohne Treffer wird zurückgespielt und kostet keinen Zug.
 - Gibt es keinen möglichen Zug mehr, wird das Feld gemischt.
+- Punkte-Level laufen bis zum letzten Zug. Alle anderen Level enden, sobald die Ziele erfüllt sind.
+- **Zuckerrausch:** Nach einem Sieg gehen übrige Spezial-Bonbons hoch, und jeder übrige Zug wird zu einem
+  Streifen-Bonbon, das sofort zündet. So sind drei Sterne erreichbar.
 
 | Kombination | Ergebnis | Effekt |
 | --- | --- | --- |

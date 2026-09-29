@@ -9,6 +9,8 @@ protocol GameSceneDelegate: AnyObject {
     func sceneDidApply(_ step: CascadeStep)
     func sceneDidShow(_ word: ComboWord)
     func sceneDidFinish(_ move: MoveResult)
+    /// The level is won and the leftover moves are about to turn into striped candies.
+    func sceneDidStartSugarRush()
     func sceneHint() -> (Position, Position)?
 }
 
@@ -40,6 +42,8 @@ final class GameScene: SKScene {
     private var hinted: [SKSpriteNode] = []
     private var hintTask: Task<Void, Never>?
     private var tile: CGFloat = 40
+    /// Below 1 speeds animations up (the sugar rush plays many steps in a row).
+    private var pace: Double = 1
     private let art = CandyArt.shared
     private let sound = SoundManager.shared
 
@@ -107,6 +111,28 @@ final class GameScene: SKScene {
 
     private var pieceSize: CGFloat { tile * 0.9 }
 
+    /// Rounded tile with a soft vertical gradient and a glassy top edge.
+    private func tileTexture(top: UIColor, bottom: UIColor) -> SKTexture {
+        let size = CGSize(width: max(8, tile - 2), height: max(8, tile - 2))
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let rect = CGRect(origin: .zero, size: size)
+            let path = UIBezierPath(roundedRect: rect, cornerRadius: size.width * 0.2)
+            path.addClip()
+            let colors = [top.cgColor, bottom.cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            }
+            UIColor.white.withAlphaComponent(0.55).setFill()
+            UIBezierPath(roundedRect: CGRect(x: size.width * 0.12, y: size.height * 0.06,
+                                             width: size.width * 0.76, height: size.height * 0.12),
+                         cornerRadius: size.height * 0.06).fill()
+            UIColor(hex: 0x6FA8DC, alpha: 0.35).setStroke()
+            path.lineWidth = 1.5
+            path.stroke()
+        }
+        return SKTexture(image: image)
+    }
+
     private func rebuild() {
         guard board.columns > 0, size.width > 1, size.height > 1 else { return }
         tile = max(10, floor(min((size.width - 14) / CGFloat(board.columns), (size.height - 14) / CGFloat(board.rows))))
@@ -123,23 +149,32 @@ final class GameScene: SKScene {
 
         // Only the board area shows pieces, so refills slide in from behind the top edge.
         let mask = SKNode()
-        // Board frame: a light rim and a deep blue base under the translucent tiles.
-        for (grow, color, z) in [(12.0, UIColor(hex: 0xF2FAFF), -3.0), (5.0, UIColor(hex: 0x2F6DB5), -2.0)] as [(CGFloat, UIColor, CGFloat)] {
+        // Board frame: soft shadow, white candy rim and a deep blue glass base under the tiles.
+        let frameLayers: [(grow: CGFloat, color: UIColor, offset: CGFloat, z: CGFloat)] = [
+            (16, UIColor(hex: 0x1A4D8F, alpha: 0.28), -5, -5),
+            (14, UIColor(hex: 0xFFFFFF, alpha: 0.95), 0, -4),
+            (8, UIColor(hex: 0xBFE6FF), 0, -3),
+            (4, UIColor(hex: 0x2A64B8), 0, -2),
+        ]
+        for layer in frameLayers {
             for p in board.positions {
-                let node = SKShapeNode(rectOf: CGSize(width: tile + grow, height: tile + grow), cornerRadius: tile * 0.2)
-                node.fillColor = color
+                let node = SKShapeNode(rectOf: CGSize(width: tile + layer.grow, height: tile + layer.grow),
+                                       cornerRadius: tile * 0.24)
+                node.fillColor = layer.color
                 node.strokeColor = .clear
-                node.position = point(for: p)
-                node.zPosition = z
+                node.position = point(for: p).applying(CGAffineTransform(translationX: 0, y: layer.offset))
+                node.zPosition = layer.z
                 tileLayer.addChild(node)
             }
         }
+        let light = tileTexture(top: UIColor(hex: 0xEAF7FF), bottom: UIColor(hex: 0xC9E8FF))
+        let dark = tileTexture(top: UIColor(hex: 0xD3EDFF), bottom: UIColor(hex: 0xAFD9FB))
         for p in board.positions {
-            let tileNode = SKShapeNode(rectOf: CGSize(width: tile - 3, height: tile - 3), cornerRadius: tile * 0.14)
             let alt = (p.row + p.col).isMultiple(of: 2)
-            tileNode.fillColor = (alt ? Theme.tileUI : Theme.tileAltUI).resolved(dark: isDark)
-            tileNode.strokeColor = .clear
+            let tileNode = SKSpriteNode(texture: alt ? light : dark)
+            tileNode.size = CGSize(width: tile - 2, height: tile - 2)
             tileNode.position = point(for: p)
+            tileNode.alpha = isDark ? 0.8 : 1
             tileLayer.addChild(tileNode)
 
             let maskTile = SKSpriteNode(color: .white, size: CGSize(width: tile, height: tile))
@@ -164,9 +199,11 @@ final class GameScene: SKScene {
                 jellyNodes[p] = node
                 return node
             }()
-            node.fillColor = Theme.jellyUI.withAlphaComponent(cell.jelly >= 2 ? 0.95 : 0.6)
-            node.strokeColor = UIColor.white.withAlphaComponent(0.85)
+            node.fillColor = (cell.jelly >= 2 ? Theme.jellyUI.darker(0.08) : Theme.jellyUI)
+                .withAlphaComponent(cell.jelly >= 2 ? 0.92 : 0.62)
+            node.strokeColor = UIColor.white.withAlphaComponent(0.9)
             node.lineWidth = cell.jelly >= 2 ? 3 : 1.5
+            node.glowWidth = cell.jelly >= 2 ? 1.5 : 0
         } else if let node = jellyNodes.removeValue(forKey: p) {
             node.run(.sequence([.group([.fadeOut(withDuration: 0.25), .scale(to: 1.15, duration: 0.25)]),
                                 .removeFromParent()]))
@@ -339,6 +376,20 @@ final class GameScene: SKScene {
             await wait(0.3)
             await animateShuffle(to: shuffled)
         }
+        if !result.sugarRush.isEmpty {
+            await wait(0.4)
+            gameDelegate?.sceneDidStartSugarRush()
+            sound.play(.sugarrush)
+            sound.say("Sugar Crush!")
+            Haptics.success()
+            await wait(1.1)
+            pace = 0.6
+            for step in result.sugarRush {
+                await animate(step)
+                gameDelegate?.sceneDidApply(step)
+            }
+            pace = 1
+        }
         reconcile(with: result.board)
         gameDelegate?.sceneDidFinish(result)
     }
@@ -381,22 +432,33 @@ final class GameScene: SKScene {
 
     private func animate(_ step: CascadeStep) async {
         // Power-ups: transform, then fire.
+        if step.movesSpent > 0 {
+            // Sugar rush: a sparkle shoots from the moves counter into each new striped candy.
+            for t in step.transformed {
+                comet(to: point(for: t.position))
+            }
+            sound.play(.whoosh, volume: 0.6)
+            await wait(0.3)
+        }
         for t in step.transformed {
             setKind(t.piece.kind, for: t.piece.id)
-            sprites[t.piece.id]?.fire(.sequence([.scale(to: 1.2, duration: 0.1), .scale(to: 1, duration: 0.1)]))
+            sprites[t.piece.id]?.fire(.sequence([.scale(to: 1.25, duration: 0.1), .scale(to: 1, duration: 0.12)]))
+            spark(at: point(for: t.position))
         }
-        if !step.transformed.isEmpty { await wait(0.25) }
+        if !step.transformed.isEmpty {
+            sound.play(.special, pitch: 1.2, volume: 0.7)
+            await wait(0.25)
+        }
 
         for activation in step.activations {
             showActivation(activation)
         }
         if !step.activations.isEmpty {
-            sound.play(.special, pitch: 1 + Double(step.index - 1) * 0.08)
+            playActivationSounds(step.activations, index: step.index)
             await wait(0.12)
         }
         if step.isBigExplosion {
             shake(intensity: step.activations.contains { $0.kind == .wholeBoard } ? 1.6 : 1)
-            sound.play(.bomb)
             Haptics.explosion()
         }
 
@@ -414,8 +476,13 @@ final class GameScene: SKScene {
             ]))
         }
         if !step.cleared.isEmpty {
-            sound.play(.pop, pitch: min(2, 1 + Double(step.index - 1) * 0.12))
+            sound.play(.pop, pitch: min(2.2, 1 + Double(step.index - 1) * 0.14))
             Haptics.pop()
+            for cleared in step.cleared { flashTile(at: cleared.position) }
+            showScore(step)
+        }
+        if !step.jellyHit.isEmpty {
+            sound.play(.jelly, pitch: 1 + Double(step.index - 1) * 0.05, volume: 0.8)
         }
         for damaged in step.damaged {
             setKind(damaged.piece.kind, for: damaged.piece.id)
@@ -440,8 +507,11 @@ final class GameScene: SKScene {
                 burst(at: node.position, color: .white, amount: 8)
             }
         }
+        for placed in step.created {
+            shine(at: point(for: placed.position))
+        }
         if !step.created.isEmpty {
-            sound.play(.special, pitch: 1.3)
+            sound.play(.special)
             Haptics.special()
             await wait(0.18)
         }
@@ -451,7 +521,7 @@ final class GameScene: SKScene {
         for fall in step.falls {
             guard let node = sprites[fall.pieceID] else { continue }
             let rows = CGFloat(abs(fall.to.row - fall.from.row) + abs(fall.to.col - fall.from.col))
-            let duration = Timing.fallBase + Timing.fallPerRow * TimeInterval(rows)
+            let duration = (Timing.fallBase + Timing.fallPerRow * TimeInterval(rows)) * pace
             node.run(fallAction(to: point(for: fall.to), duration: duration), withKey: "move")
             longest = max(longest, duration)
         }
@@ -459,7 +529,7 @@ final class GameScene: SKScene {
             let node = addSprite(for: spawn.piece, at: spawn.position)
             node.position = point(row: spawn.startRow, col: spawn.startColumn)
             let rows = CGFloat(spawn.position.row - spawn.startRow)
-            let duration = Timing.fallBase + Timing.fallPerRow * TimeInterval(rows)
+            let duration = (Timing.fallBase + Timing.fallPerRow * TimeInterval(rows)) * pace
             node.run(fallAction(to: point(for: spawn.position), duration: duration), withKey: "move")
             longest = max(longest, duration)
         }
@@ -586,6 +656,119 @@ final class GameScene: SKScene {
         }
     }
 
+    private func playActivationSounds(_ activations: [Activation], index: Int) {
+        let pitch = 1 + Double(index - 1) * 0.06
+        var played = Set<String>()
+        for activation in activations {
+            let effect: SoundManager.Effect
+            switch activation.kind {
+            case .lineHorizontal, .lineVertical, .cross: effect = .stripe
+            case .area: effect = .bomb
+            case .colorBomb, .wholeBoard: effect = .colorbomb
+            case .fish: effect = .fish
+            }
+            guard played.insert(effect.rawValue).inserted else { continue }
+            sound.play(effect, pitch: pitch, volume: effect == .bomb ? 0.8 : 1)
+        }
+        if activations.contains(where: { $0.kind == .wholeBoard }) { sound.play(.bomb) }
+    }
+
+    /// Floating "+points" over the popped candies, tinted like the candy that popped most.
+    private func showScore(_ step: CascadeStep) {
+        guard step.scoreGained > 0, !step.cleared.isEmpty else { return }
+        let points = step.cleared.map { point(for: $0.position) }
+        let center = CGPoint(x: points.map(\.x).reduce(0, +) / CGFloat(points.count),
+                             y: points.map(\.y).reduce(0, +) / CGFloat(points.count))
+        var counts: [CandyColor: Int] = [:]
+        for cleared in step.cleared {
+            if let color = cleared.piece.kind.color { counts[color, default: 0] += 1 }
+        }
+        let color = counts.max { $0.value < $1.value }.map { Theme.candy($0.key) } ?? Theme.starUI
+        let fontSize = tile * (step.scoreGained >= 1000 ? 0.62 : 0.48)
+
+        let label = SKNode()
+        label.position = center
+        label.zPosition = 5
+        for (offset, fill) in [(CGPoint(x: 0, y: -2), color.darker(0.45)), (.zero, UIColor.white)] {
+            let text = SKLabelNode(fontNamed: "ArialRoundedMTBold")
+            text.text = "+\(step.scoreGained.formatted())"
+            text.fontSize = fontSize
+            text.fontColor = fill
+            text.verticalAlignmentMode = .center
+            text.position = offset
+            label.addChild(text)
+        }
+        let under = SKLabelNode(fontNamed: "ArialRoundedMTBold")
+        under.text = "+\(step.scoreGained.formatted())"
+        under.fontSize = fontSize
+        under.fontColor = color
+        under.verticalAlignmentMode = .center
+        under.setScale(1.08)
+        under.zPosition = -1
+        label.addChild(under)
+        label.setScale(0.4)
+        effectLayer.addChild(label)
+        let pop = SKAction.scale(to: 1, duration: 0.18)
+        pop.timingMode = .easeOut
+        label.fire(.sequence([
+            pop,
+            .group([.moveBy(x: 0, y: tile * 0.9, duration: 0.7), .sequence([.wait(forDuration: 0.4), .fadeOut(withDuration: 0.3)])]),
+            .removeFromParent(),
+        ]))
+    }
+
+    /// Short white glow on the tile under a popped candy.
+    private func flashTile(at p: Position) {
+        let glow = SKShapeNode(rectOf: CGSize(width: tile - 2, height: tile - 2), cornerRadius: tile * 0.2)
+        glow.fillColor = UIColor.white.withAlphaComponent(0.8)
+        glow.strokeColor = .clear
+        glow.position = point(for: p)
+        glow.zPosition = 2
+        tileLayer.addChild(glow)
+        glow.run(.sequence([.fadeOut(withDuration: 0.35), .removeFromParent()]))
+    }
+
+    /// Rotating light rays behind a freshly made special candy.
+    private func shine(at position: CGPoint) {
+        let rays = SKSpriteNode(texture: art.raysTexture)
+        rays.size = CGSize(width: tile * 2.2, height: tile * 2.2)
+        rays.position = position
+        rays.blendMode = .add
+        rays.alpha = 0
+        rays.zPosition = -1
+        effectLayer.addChild(rays)
+        rays.run(.sequence([
+            .group([.fadeAlpha(to: 0.9, duration: 0.12), .rotate(byAngle: .pi / 2, duration: 0.7),
+                    .sequence([.wait(forDuration: 0.35), .fadeOut(withDuration: 0.35)])]),
+            .removeFromParent(),
+        ]))
+    }
+
+    /// Sparkle flying from above the board into a candy (sugar rush).
+    private func comet(to target: CGPoint) {
+        let star = SKSpriteNode(texture: art.sparkTexture)
+        star.size = CGSize(width: tile * 0.9, height: tile * 0.9)
+        star.blendMode = .add
+        star.position = CGPoint(x: 0, y: tile * CGFloat(board.rows) / 2 + tile)
+        effectLayer.addChild(star)
+        let trail = SKEmitterNode()
+        trail.particleTexture = art.sprinkleTexture
+        trail.particleBirthRate = 120
+        trail.particleLifetime = 0.35
+        trail.particleAlphaSpeed = -2.5
+        trail.particleScale = tile / 90
+        trail.particleColor = Theme.starUI
+        trail.particleColorBlendFactor = 1
+        trail.particleSpeed = 10
+        trail.emissionAngleRange = .pi * 2
+        trail.targetNode = effectLayer
+        star.addChild(trail)
+        let fly = SKAction.move(to: target, duration: 0.3 * pace)
+        fly.timingMode = .easeIn
+        star.fire(.sequence([.group([fly, .rotate(byAngle: .pi, duration: 0.3 * pace)]),
+                             .fadeOut(withDuration: 0.1), .removeFromParent()]))
+    }
+
     /// Sugar sprinkles flying out of a popped candy.
     private func burst(at position: CGPoint, color: UIColor, amount: Int) {
         let emitter = SKEmitterNode()
@@ -696,7 +879,7 @@ final class GameScene: SKScene {
     }
 
     private func wait(_ seconds: TimeInterval) async {
-        try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        try? await Task.sleep(nanoseconds: UInt64(max(0, seconds * pace) * 1_000_000_000))
     }
 }
 

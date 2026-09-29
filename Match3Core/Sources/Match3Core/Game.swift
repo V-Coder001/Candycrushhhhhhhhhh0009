@@ -14,7 +14,10 @@ public final class Game {
 
     /// Points per popped candy, multiplied by the cascade index.
     public static let candyPoints = 20
+    /// Sugar rush points for every move that was left over.
     public static let bonusPerMove = 300
+    /// Striped candies placed per sugar rush round.
+    static let sugarRushBatch = 4
 
     public init(level: Level, seed: UInt64 = UInt64.random(in: 0...UInt64.max)) {
         self.level = level
@@ -106,10 +109,11 @@ public final class Game {
         let clearedCount = result.steps.reduce(0) { $0 + $1.cleared.count }
         result.comboWord = ComboWord.forMove(cascades: result.steps.count, cleared: clearedCount)
 
-        if goalsMet {
+        if goalsMet && (!level.playsAllMoves || movesLeft <= 0) {
             status = .won
-            result.bonusScore = movesLeft * Game.bonusPerMove
-            score += result.bonusScore
+            let before = score
+            result.sugarRush = sugarRush()
+            result.bonusScore = score - before
         } else if movesLeft <= 0 {
             status = .lost
         } else if MatchFinder.findPossibleMove(in: board) == nil {
@@ -121,14 +125,68 @@ public final class Game {
         return result
     }
 
+    // MARK: Sugar rush
+
+    /// Fires all specials still on the board, then turns the leftover moves into striped candies
+    /// (a few per round) and fires those, until no moves and no specials are left.
+    private func sugarRush() -> [CascadeStep] {
+        var steps: [CascadeStep] = []
+        var chocolateDestroyed = false
+
+        func cascade(detonate: [Position], transformed: [PlacedPiece], moves: Int) {
+            var index = 1
+            var recentlyMoved: Set<Position> = []
+            var pending = detonate
+            while index < 60, var step = resolveStep(index: index, combo: nil, preferred: [],
+                                                     recentlyMoved: recentlyMoved,
+                                                     chocolateDestroyed: &chocolateDestroyed,
+                                                     detonate: pending) {
+                if index == 1 {
+                    step.transformed = transformed
+                    step.movesSpent = moves
+                    step.scoreGained += moves * Game.bonusPerMove
+                }
+                score += step.scoreGained
+                ingredientsCollected += step.collected.count
+                recentlyMoved = Set(step.falls.map(\.to) + step.spawns.map(\.position))
+                steps.append(step)
+                pending = []
+                index += 1
+            }
+        }
+
+        for _ in 0..<40 {
+            let specials = board.positions { $0 == .colorBomb || $0.special != .none }
+            if !specials.isEmpty {
+                cascade(detonate: specials, transformed: [], moves: 0)
+                continue
+            }
+            guard movesLeft > 0 else { break }
+            let spots = board.positions { $0.isPlainCandy }.shuffled(using: &rng)
+            guard !spots.isEmpty else { break }
+            let count = min(movesLeft, Game.sugarRushBatch, spots.count)
+            var transformed: [PlacedPiece] = []
+            for p in spots.prefix(count) {
+                guard var piece = board[p], let color = piece.kind.color else { continue }
+                piece.kind = .candy(color, Bool.random(using: &rng) ? .stripedHorizontal : .stripedVertical)
+                board[p] = piece
+                transformed.append(PlacedPiece(piece, p))
+            }
+            movesLeft -= count
+            cascade(detonate: transformed.map(\.position), transformed: transformed, moves: count)
+        }
+        return steps
+    }
+
     // MARK: Cascade step
 
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     private func resolveStep(index: Int, combo: (center: Position, other: Position)?, preferred: [Position],
-                             recentlyMoved: Set<Position>, chocolateDestroyed: inout Bool) -> CascadeStep? {
+                             recentlyMoved: Set<Position>, chocolateDestroyed: inout Bool,
+                             detonate: [Position] = []) -> CascadeStep? {
         let groups = combo == nil ? MatchFinder.findMatches(in: board) : []
         let armed = board.positions { $0.special == .wrappedArmed }
-        if combo == nil && groups.isEmpty && armed.isEmpty { return nil }
+        if combo == nil && groups.isEmpty && armed.isEmpty && detonate.isEmpty { return nil }
 
         var step = CascadeStep(index: index, board: board)
         step.matches = groups
@@ -320,6 +378,8 @@ public final class Game {
         }
         // Wrapped candies from the last step explode a second time.
         queue += armed
+        // Sugar rush: specials fired without a match.
+        queue += detonate
 
         // 3. Apply all hits, following chain reactions.
         var head = 0

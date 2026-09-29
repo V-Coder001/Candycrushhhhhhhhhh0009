@@ -46,6 +46,8 @@ public struct CascadeStep {
     public var falls: [FallMove] = []
     public var spawns: [Spawn] = []
     public var scoreGained = 0
+    /// Moves turned into striped candies at the start of this step (sugar rush only).
+    public var movesSpent = 0
     /// Board after this step.
     public var board: Board
 
@@ -99,7 +101,10 @@ public struct MoveResult {
     /// Set when no move was left and the board had to be shuffled.
     public var shuffledBoard: Board?
     public var comboWord: ComboWord?
-    /// Extra points for moves left when the level is won.
+    /// Victory lap after a won level: leftover specials go off and every move left becomes a
+    /// striped candy that fires right away. Played after `steps`.
+    public var sugarRush: [CascadeStep] = []
+    /// Points earned in the sugar rush.
     public var bonusScore = 0
     public var status: GameStatus
     public var board: Board
