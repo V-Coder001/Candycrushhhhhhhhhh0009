@@ -1,0 +1,41 @@
+name: Screenshots
+
+on:
+  pull_request:
+    paths:
+      - "App/**"
+      - "Match3Core/Sources/**"
+      - "scripts/screenshots.sh"
+      - ".github/workflows/screenshots.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: Screenshots im Simulator
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Capture
+        run: scripts/screenshots.sh
+      - name: Commit screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots/*.png
+          git diff --cached --quiet && exit 0
+          git commit -m "Update simulator screenshots"
+          git push origin HEAD:${{ github.head_ref }}
