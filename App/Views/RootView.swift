@@ -16,13 +16,14 @@ struct RootView: View {
             CandyBackdrop()
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
-                    // Lazy, one episode at a time: the map has over a thousand levels.
+                    // Lazy, one level at a time: the map has over a thousand levels.
                     LazyVStack(spacing: 0) {
                         header
                             .padding(.bottom, 80)
-                        ForEach(0..<episodeCount, id: \.self) { episode in
-                            episodeMap(episode)
-                                .id(episode)
+                        let current = currentLevel?.id
+                        ForEach(Level.campaign) { level in
+                            mapRow(level, isCurrent: level.id == current)
+                                .id(level.id)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -31,9 +32,7 @@ struct RootView: View {
                 }
                 .onAppear {
                     guard let current = currentLevel else { return }
-                    DispatchQueue.main.async {
-                        proxy.scrollTo((current.id - 1) / Self.levelsPerEpisode, anchor: .center)
-                    }
+                    DispatchQueue.main.async { proxy.scrollTo(current.id, anchor: .center) }
                 }
             }
 
@@ -122,19 +121,12 @@ struct RootView: View {
 
     // MARK: Map
 
-    private var episodeCount: Int {
-        (Level.campaign.count + Self.levelsPerEpisode - 1) / Self.levelsPerEpisode
-    }
-
-    /// One stretch of the candy road with the six levels of an episode. The road runs on to the first
-    /// disc of the next episode, which is drawn on top of it.
-    private func episodeMap(_ episode: Int) -> some View {
-        let first = episode * Self.levelsPerEpisode
-        let levels = Level.campaign[first..<min(first + Self.levelsPerEpisode, Level.campaign.count)]
-        let isLast = levels.endIndex == Level.campaign.count
-        let road = first...(isLast ? levels.endIndex - 1 : levels.endIndex)
-        let height = CGFloat(levels.count) * Self.spacing + (isLast ? 80 : 0)
-        let current = currentLevel?.id
+    /// One level disc with the stretch of candy road down to the next one, which is drawn on top of it.
+    /// The first level of each episode also carries the episode sign.
+    private func mapRow(_ level: Level, isCurrent: Bool) -> some View {
+        let index = level.id - 1
+        let isLast = level.id == Level.campaign.count
+        let road = index...(isLast ? index : index + 1)
         return ZStack(alignment: .top) {
             // Candy road: a wide sugar-white band with pink stripes painted on.
             MapPath(indices: road, spacing: Self.spacing)
@@ -147,22 +139,21 @@ struct RootView: View {
                 .stroke(Color(uiColor: Theme.accentUI.lighter(0.25)),
                         style: StrokeStyle(lineWidth: 12, lineCap: .butt, lineJoin: .round, dash: [12, 14]))
 
-            ForEach(levels) { level in
-                let index = level.id - 1
-                LevelNode(level: level,
-                          stars: progress.stars[level.id] ?? 0,
-                          unlocked: progress.isUnlocked(level),
-                          isCurrent: level.id == current) {
-                    open(level)
-                }
-                .offset(x: MapPath.offset(for: index), y: MapPath.y(for: index - first, spacing: Self.spacing) - 50)
+            LevelNode(level: level,
+                      stars: progress.stars[level.id] ?? 0,
+                      unlocked: progress.isUnlocked(level),
+                      isCurrent: isCurrent) {
+                open(level)
             }
+            .offset(x: MapPath.offset(for: index), y: MapPath.y(for: 0, spacing: Self.spacing) - 50)
 
-            EpisodeSign(number: episode + 1)
-                .offset(y: MapPath.y(for: 0, spacing: Self.spacing) - 108)
+            if index % Self.levelsPerEpisode == 0 {
+                EpisodeSign(number: index / Self.levelsPerEpisode + 1)
+                    .offset(y: MapPath.y(for: 0, spacing: Self.spacing) - 108)
+            }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: height, alignment: .top)
+        .frame(height: Self.spacing + (isLast ? 80 : 0), alignment: .top)
     }
 }
 
