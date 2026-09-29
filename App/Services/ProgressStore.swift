@@ -32,7 +32,8 @@ final class ProgressStore: ObservableObject {
     }
 
     func nextLevel(after level: Level) -> Level? {
-        Level.campaign.first { $0.id == level.id + 1 }
+        let levels = level.id >= Level.mixLabFirstID ? Level.mixLab : Level.campaign
+        return levels.first { $0.id == level.id + 1 }
     }
 
     private func save(_ values: [Int: Int], _ key: String) {

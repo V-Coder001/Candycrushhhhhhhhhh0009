@@ -43,6 +43,8 @@ public struct CascadeStep {
     /// Wrapped candies waiting for their second explosion.
     public var rearmed: [PlacedPiece] = []
     public var collected: [PlacedPiece] = []
+    /// Mixed candies popped in this step.
+    public var served: [PlacedPiece] = []
     public var falls: [FallMove] = []
     public var spawns: [Spawn] = []
     public var scoreGained = 0

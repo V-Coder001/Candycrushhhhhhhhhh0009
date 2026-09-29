@@ -60,6 +60,7 @@ enum Theme {
         case .ingredient(.hazelnut): return UIColor(hex: 0xB0703A)
         case .chocolate: return UIColor(hex: 0x6E3B22)
         case .blocker: return UIColor(hex: 0xFFFFFF)
+        case let .mix(a, b): return candy(a).mixed(with: candy(b), amount: 0.5)
         }
     }
 

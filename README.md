@@ -76,6 +76,19 @@ Schokolade entfernen.
 **Hindernisse:** Schokolade (breitet sich aus, wenn in einem Zug keine zerstört wurde), Gitter
 (Bonbon ist fest, ein Treffer löst das Gitter), Zuckerwürfel-Blockaden (2 oder 3 Treffer).
 
+## Mischlabor (Prototyp)
+
+Über den Knopf „Mischlabor“ auf der Karte gibt es fünf Test-Level für eine neue Mechanik:
+Bildet ein Tausch gleichzeitig zwei Reihen in verschiedenen Farben, die sich berühren, entsteht an der
+Tauschstelle ein **Mischbonbon** aus beiden Farben. Es passt zu beiden Farben, kann also zwei Reihen
+verbinden, und wird serviert, sobald es in einer Reihe (oder durch ein Spezial-Bonbon) platzt. Ziel der
+Labor-Level ist `serveMixes`: eine Anzahl Mischbonbons servieren. Im Labor zeigt der Tipp bevorzugt einen
+Zug, der ein Mischbonbon ergibt.
+
+Die Mechanik hängt am Schalter `mixing` eines Levels und ist in der normalen Kampagne aus. Nur der Zug des
+Spielers mischt, Kettenreaktionen nicht: So bleibt das Mischen eine gezielte Fertigkeit statt Zufall.
+Ein Bot serviert im Schnitt rund 8 Mischbonbons in 20 Zügen, wenn er gezielt darauf spielt.
+
 ## Level bauen
 
 Das Spiel hat 1012 Level in Episoden zu je sechs. Die ersten 12 sind von Hand gebaut, die übrigen 1000
@@ -94,6 +107,8 @@ Handgebaute Level stehen in `Match3Core/Sources/Match3Core/Levels.swift`, ein Ze
 l  Gitter          k  Gitter + Gelee    c  Schokolade     b  Blockade (2)
 B  Blockade (3)    i  Kirsche           h  Haselnuss
 ```
+
+In Tests schreibt `Board.parse` ein Mischbonbon als `%RY` (rot und gelb).
 
 ## Eigene Sounds
 

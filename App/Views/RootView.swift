@@ -7,6 +7,7 @@ struct RootView: View {
     @State private var playing: Level?
     @State private var intro: Level?
     @State private var showSettings = false
+    @State private var showLab = false
 
     private static let spacing: CGFloat = 118
     private static let levelsPerEpisode = 6
@@ -18,8 +19,11 @@ struct RootView: View {
                 ScrollView(showsIndicators: false) {
                     // Lazy, one level at a time: the map has over a thousand levels.
                     LazyVStack(spacing: 0) {
-                        header
-                            .padding(.bottom, 80)
+                        VStack(spacing: 12) {
+                            header
+                            MixLabButton { showLab = true }
+                        }
+                        .padding(.bottom, 80)
                         let current = currentLevel?.id
                         ForEach(Level.campaign) { level in
                             mapRow(level, isCurrent: level.id == current)
@@ -55,6 +59,7 @@ struct RootView: View {
             SoundManager.shared.updateMusic()
             if playing == nil, let level = Demo.level { playing = level }
             if intro == nil, let level = Demo.intro { intro = level }
+            if Demo.lab { showLab = true }
         }
         .fullScreenCover(item: $playing) { level in
             GameView(level: level,
@@ -62,6 +67,13 @@ struct RootView: View {
                      onNext: nextAction(after: level))
                 .id(level.id)
                 .environmentObject(progress)
+        }
+        .sheet(isPresented: $showLab) {
+            MixLabView { level in
+                showLab = false
+                open(level)
+            }
+            .environmentObject(progress)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -295,7 +307,7 @@ private struct LevelNode: View {
             guard isCurrent else { return }
             withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) { bounce = true }
         }
-        .accessibilityLabel("Level \(level.id), \(level.name), \(stars) Sterne")
+        .accessibilityLabel("\(level.title), \(level.name), \(stars) Sterne")
     }
 }
 
@@ -325,7 +337,7 @@ struct LevelIntroView: View {
     let onClose: () -> Void
 
     var body: some View {
-        CandyPanel(title: "Level \(level.id)") {
+        CandyPanel(title: level.title) {
             VStack(spacing: 16) {
                 Text(level.name)
                     .font(Theme.title(20, weight: .heavy))

@@ -26,7 +26,7 @@ struct SoettApp: App {
 enum Demo {
     static var level: Level? {
         let id = UserDefaults.standard.integer(forKey: "demoLevel")
-        return Level.campaign.first { $0.id == id }
+        return (Level.campaign + Level.mixLab).first { $0.id == id }
     }
 
     static var seed: UInt64? {
@@ -35,6 +35,9 @@ enum Demo {
     }
 
     static var autoplay: Bool { UserDefaults.standard.bool(forKey: "autoplay") }
+
+    /// Opens the Mischlabor sheet.
+    static var lab: Bool { UserDefaults.standard.bool(forKey: "demoLab") }
 
     /// Opens the start card of this level on the map.
     static var intro: Level? {

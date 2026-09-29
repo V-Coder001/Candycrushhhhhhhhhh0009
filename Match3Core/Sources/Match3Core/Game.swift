@@ -7,6 +7,8 @@ public final class Game {
     public private(set) var status: GameStatus = .playing
     public private(set) var ingredientsCollected = 0
     public private(set) var ingredientsSpawned = 0
+    /// Mixed candies popped so far.
+    public private(set) var mixesServed = 0
     public let initialJelly: Int
     public let initialChocolate: Int
 
@@ -16,6 +18,8 @@ public final class Game {
     public static let candyPoints = 20
     /// Sugar rush points for every move that was left over.
     public static let bonusPerMove = 300
+    /// Extra points for popping a mixed candy.
+    public static let mixPoints = 300
     /// Striped candies placed per sugar rush round.
     static let sugarRushBatch = 4
 
@@ -47,6 +51,7 @@ public final class Game {
 
     public var goalProgress: [GoalProgress] {
         GoalProgress.evaluate(goals: level.goals, score: score, board: board, collected: ingredientsCollected,
+                              served: mixesServed,
                               initialJelly: initialJelly, initialChocolate: initialChocolate)
     }
 
@@ -68,6 +73,19 @@ public final class Game {
 
     public func hint() -> (Position, Position)? {
         MatchFinder.findPossibleMove(in: board)
+    }
+
+    /// In mixing levels: a swap that makes a mixed candy, if there is one. Used for hints and demos.
+    public func mixHint() -> (Position, Position)? {
+        guard level.mixing, status == .playing else { return nil }
+        for p in board.positions {
+            for q in [p.right, p.down] where canSwap(p, q) {
+                let trial = Game(level: level, board: board)
+                let result = trial.swap(p, q)
+                if result.steps.first?.created.contains(where: { $0.piece.kind.isMix }) == true { return (p, q) }
+            }
+        }
+        return nil
     }
 
     // MARK: Move
@@ -98,6 +116,7 @@ public final class Game {
             result.steps.append(step)
             score += step.scoreGained
             ingredientsCollected += step.collected.count
+            mixesServed += step.served.count
             recentlyMoved = Set(step.falls.map(\.to) + step.spawns.map(\.position))
             index += 1
         }
@@ -148,6 +167,7 @@ public final class Game {
                 }
                 score += step.scoreGained
                 ingredientsCollected += step.collected.count
+                mixesServed += step.served.count
                 recentlyMoved = Set(step.falls.map(\.to) + step.spawns.map(\.position))
                 steps.append(step)
                 pending = []
@@ -256,7 +276,7 @@ public final class Game {
         }
 
         func colorPositions(_ color: CandyColor) -> [Position] {
-            board.positions.filter { board.color(at: $0) == color && !hitSet.contains($0) }
+            board.positions.filter { board.has(color, at: $0) && !hitSet.contains($0) }
         }
 
         /// Fires a special at `p` and queues the cells it hits.
@@ -310,7 +330,7 @@ public final class Game {
                 let cells = colorPositions(color)
                 if special != .none && special != .wrappedArmed {
                     for p in cells {
-                        guard var piece = board[p] else { continue }
+                        guard var piece = board[p], !piece.kind.isMix else { continue }
                         let newSpecial: Special = special.isStriped
                             ? (Bool.random(using: &rng) ? .stripedHorizontal : .stripedVertical)
                             : special
@@ -368,6 +388,10 @@ public final class Game {
                 creations.append((spot, kind))
             }
         }
+        if level.mixing && index == 1 {
+            creations += mixCreations(for: groups, taken: Set(creations.map(\.0)), preferred: preferred,
+                                      recentlyMoved: recentlyMoved)
+        }
         let matchedSorted = matched.sorted()
         queue += matchedSorted
         // Matches next to chocolate or blockers damage them.
@@ -411,6 +435,12 @@ public final class Game {
                 step.scoreGained += Game.candyPoints * index
                 clearJelly(p)
                 activateColorBomb(at: p)
+            case .mix:
+                board[p] = nil
+                step.cleared.append(PlacedPiece(piece, p))
+                step.served.append(PlacedPiece(piece, p))
+                step.scoreGained += Game.candyPoints * index + Game.mixPoints
+                clearJelly(p)
             case .ingredient:
                 continue
             case .chocolate:
@@ -489,6 +519,26 @@ public final class Game {
             }
         }
         return order.compactMap { merged[$0] }
+    }
+
+    /// Mixing: where two matches of different colours touch, one mixed candy of both colours appears
+    /// at the contact, preferably on the swapped cell.
+    private func mixCreations(for groups: [MatchGroup], taken: Set<Position>, preferred: [Position],
+                              recentlyMoved: Set<Position>) -> [(Position, PieceKind)] {
+        var taken = taken
+        var result: [(Position, PieceKind)] = []
+        for (i, a) in groups.enumerated() {
+            for b in groups[(i + 1)...] where a.color != b.color {
+                let contacts = (a.sortedPositions.filter { $0.neighbors.contains(where: b.positions.contains) }
+                    + b.sortedPositions.filter { $0.neighbors.contains(where: a.positions.contains) })
+                    .filter { !taken.contains($0) && !board.cell($0).locked }
+                guard let spot = preferred.first(where: contacts.contains)
+                    ?? contacts.first(where: recentlyMoved.contains) ?? contacts.first else { continue }
+                taken.insert(spot)
+                result.append((spot, .mixed(a.color, b.color)))
+            }
+        }
+        return result
     }
 
     /// Where a new special appears: at the swapped cell, else where something just landed,

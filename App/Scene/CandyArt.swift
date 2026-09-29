@@ -34,6 +34,7 @@ final class CandyArt {
             case .ingredient(.hazelnut): drawHazelnut(in: rect, cg)
             case .chocolate: drawChocolate(in: rect, cg)
             case let .blocker(hits): drawBlocker(hits: hits, in: rect, cg)
+            case let .mix(a, b): drawMix(a, b, in: rect, cg)
             }
         }
         images[key] = image
@@ -288,6 +289,33 @@ final class CandyArt {
         case .none:
             break
         }
+    }
+
+    /// Mixed candy: a round two-tone sweet, one colour per half, with a white swirl over the seam.
+    private func drawMix(_ a: CandyColor, _ b: CandyColor, in rect: CGRect, _ cg: CGContext) {
+        let r = rect.insetBy(dx: rect.width * 0.07, dy: rect.height * 0.07)
+        let path = UIBezierPath(ovalIn: r)
+        fillGlossy(path, base: Theme.candy(a), in: r, cg)
+
+        cg.saveGState()
+        let half = UIBezierPath()
+        half.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+        half.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        half.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        half.close()
+        half.addClip()
+        fillGlossy(path, base: Theme.candy(b), in: r, cg)
+        cg.restoreGState()
+
+        let swirl = UIBezierPath()
+        swirl.move(to: CGPoint(x: r.minX + r.width * 0.2, y: r.maxY - r.height * 0.2))
+        swirl.addCurve(to: CGPoint(x: r.maxX - r.width * 0.2, y: r.minY + r.height * 0.2),
+                       controlPoint1: CGPoint(x: r.midX - r.width * 0.3, y: r.midY - r.height * 0.05),
+                       controlPoint2: CGPoint(x: r.midX + r.width * 0.3, y: r.midY + r.height * 0.05))
+        swirl.lineWidth = r.width * 0.1
+        swirl.lineCapStyle = .round
+        UIColor.white.withAlphaComponent(0.92).setStroke()
+        swirl.stroke()
     }
 
     private func drawFish(in r: CGRect, color: UIColor, eye: UIColor, _ cg: CGContext) {

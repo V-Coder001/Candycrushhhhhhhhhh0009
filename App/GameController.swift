@@ -29,6 +29,7 @@ final class GameController: ObservableObject, GameSceneDelegate {
     var onFinish: ((Level, _ stars: Int, _ score: Int) -> Void)?
 
     private var collectedShown = 0
+    private var servedShown = 0
 
     init(level: Level) {
         self.level = level
@@ -49,6 +50,7 @@ final class GameController: ObservableObject, GameSceneDelegate {
         game = Game(level: level)
         score = 0
         collectedShown = 0
+        servedShown = 0
         movesLeft = game.movesLeft
         goals = game.goalProgress
         status = .playing
@@ -68,7 +70,7 @@ final class GameController: ObservableObject, GameSceneDelegate {
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             while let self, self.status == .playing {
-                if !self.scene.isBusy, let (a, b) = self.game.hint() {
+                if !self.scene.isBusy, let (a, b) = self.game.mixHint() ?? self.game.hint() {
                     self.scene.performSwap(a, b)
                 }
                 try? await Task.sleep(nanoseconds: 900_000_000)
@@ -91,11 +93,13 @@ final class GameController: ObservableObject, GameSceneDelegate {
 
     func sceneDidApply(_ step: CascadeStep) {
         collectedShown += step.collected.count
+        servedShown += step.served.count
         withAnimation(.snappy) {
             if step.movesSpent > 0 { movesLeft = max(0, movesLeft - step.movesSpent) }
             score += step.scoreGained
             goals = GoalProgress.evaluate(goals: level.goals, score: score, board: step.board,
-                                          collected: collectedShown, initialJelly: game.initialJelly,
+                                          collected: collectedShown, served: servedShown,
+                                          initialJelly: game.initialJelly,
                                           initialChocolate: game.initialChocolate)
         }
         updateStarsReached()
@@ -154,6 +158,6 @@ final class GameController: ObservableObject, GameSceneDelegate {
     }
 
     func sceneHint() -> (Position, Position)? {
-        status == .playing ? game.hint() : nil
+        status == .playing ? game.mixHint() ?? game.hint() : nil
     }
 }
