@@ -372,7 +372,7 @@ final class GameScene: SKScene {
         // Power-ups: transform, then fire.
         for t in step.transformed {
             setKind(t.piece.kind, for: t.piece.id)
-            sprites[t.piece.id]?.run(.sequence([.scale(to: 1.2, duration: 0.1), .scale(to: 1, duration: 0.1)]))
+            sprites[t.piece.id]?.fire(.sequence([.scale(to: 1.2, duration: 0.1), .scale(to: 1, duration: 0.1)]))
         }
         if !step.transformed.isEmpty { await wait(0.25) }
 
@@ -396,7 +396,7 @@ final class GameScene: SKScene {
             node.removeAllActions()
             burst(at: node.position, color: Theme.tint(for: cleared.piece.kind),
                   amount: cleared.piece.kind.isPlainCandy ? 9 : 16)
-            node.run(.sequence([
+            node.fire(.sequence([
                 .scale(to: 1.15, duration: 0.05),
                 .group([.scale(to: 0.1, duration: Timing.pop), .fadeOut(withDuration: Timing.pop)]),
                 .removeFromParent(),
@@ -424,7 +424,7 @@ final class GameScene: SKScene {
             node.setScale(0.2)
             let grow = SKAction.scale(to: 1, duration: 0.22)
             grow.timingMode = .easeOut
-            node.run(grow)
+            node.fire(grow)
             if placed.piece.kind.special != .wrappedArmed {
                 burst(at: node.position, color: .white, amount: 8)
             }
@@ -459,7 +459,7 @@ final class GameScene: SKScene {
             guard let node = sprites.removeValue(forKey: collected.piece.id) else { continue }
             spriteKinds[collected.piece.id] = nil
             burst(at: node.position, color: Theme.starUI, amount: 14)
-            node.run(.sequence([
+            node.fire(.sequence([
                 .group([.moveBy(x: 0, y: -tile * 0.9, duration: 0.3), .fadeOut(withDuration: 0.3)]),
                 .removeFromParent(),
             ]))
@@ -476,12 +476,12 @@ final class GameScene: SKScene {
     private func animateSpread(_ spread: ChocolateSpread) async {
         if let old = sprites.removeValue(forKey: spread.replaced.id) {
             spriteKinds[spread.replaced.id] = nil
-            old.run(.sequence([.fadeOut(withDuration: 0.2), .removeFromParent()]))
+            old.fire(.sequence([.fadeOut(withDuration: 0.2), .removeFromParent()]))
         }
         let node = addSprite(for: spread.chocolate, at: spread.to)
         node.position = point(for: spread.from)
         node.setScale(0.4)
-        node.run(.group([.move(to: point(for: spread.to), duration: 0.3), .scale(to: 1, duration: 0.3)]))
+        node.fire(.group([.move(to: point(for: spread.to), duration: 0.3), .scale(to: 1, duration: 0.3)]))
         sound.play(.crunch, pitch: 0.8)
         await wait(0.35)
     }
@@ -686,5 +686,12 @@ final class GameScene: SKScene {
 
     private func wait(_ seconds: TimeInterval) async {
         try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+    }
+}
+
+private extension SKNode {
+    /// Fire-and-forget `run`. Inside async functions plain `run(_:)` resolves to the awaiting overload.
+    func fire(_ action: SKAction) {
+        run(action, completion: {})
     }
 }
