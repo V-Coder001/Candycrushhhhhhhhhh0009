@@ -469,6 +469,12 @@ final class GameScene: SKScene {
             node.removeAllActions()
             burst(at: node.position, color: Theme.tint(for: cleared.piece.kind),
                   amount: cleared.piece.kind.isPlainCandy ? 9 : 16)
+            if case let .mix(a, b) = cleared.piece.kind {
+                // Served: both colours burst out.
+                burst(at: node.position, color: Theme.candy(a), amount: 12)
+                burst(at: node.position, color: Theme.candy(b), amount: 12)
+                shine(at: node.position)
+            }
             node.fire(.sequence([
                 .scale(to: 1.15, duration: 0.05),
                 .group([.scale(to: 0.1, duration: Timing.pop), .fadeOut(withDuration: Timing.pop)]),

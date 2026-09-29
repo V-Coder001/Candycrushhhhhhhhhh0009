@@ -198,7 +198,16 @@ struct GoalIcon: View {
             Image(uiImage: CandyArt.shared.image(for: .ingredient(.cherry), size: size))
         case .clearChocolate:
             Image(uiImage: CandyArt.shared.image(for: .chocolate, size: size))
+        case .serveMixes:
+            Image(uiImage: CandyArt.shared.image(for: .mix(.red, .yellow), size: size))
         }
+    }
+}
+
+extension Level {
+    /// "Level 12", or "Labor 3" for the Mischlabor.
+    var title: String {
+        id >= Level.mixLabFirstID ? "Labor \(id - Level.mixLabFirstID + 1)" : "Level \(id)"
     }
 }
 
@@ -209,6 +218,7 @@ extension Goal {
         case .clearJelly: return "Entferne das ganze Gelee"
         case let .collectIngredients(count): return "Bring \(count) Zutaten nach unten"
         case .clearChocolate: return "Räume die Schokolade ab"
+        case let .serveMixes(count): return "Mische und serviere \(count) Mischbonbons"
         }
     }
 }

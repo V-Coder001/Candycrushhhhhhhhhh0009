@@ -90,6 +90,7 @@ final class LevelGeneratorTests: XCTestCase {
                 case .clearJelly: kinds.insert("jelly")
                 case .collectIngredients: kinds.insert("ingredients")
                 case .clearChocolate: kinds.insert("chocolate")
+                case .serveMixes: kinds.insert("mixes")
                 }
             }
         }

@@ -43,6 +43,8 @@ sleep 3
 kill -INT $REC; wait $REC || true
 
 run -demoIntro 3; sleep 5; shot 6-intro
+run -demoLab YES; sleep 5; shot 8-mixlab
+run -demoLevel 10001 -demoSeed 2 -autoplay YES; sleep 5; shot 9-mix
 run -demoLevel 1 -demoSeed 4 -autoplay YES; sleep 70; shot 7-win
 
 xcrun simctl ui "$UDID" appearance dark

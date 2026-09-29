@@ -93,7 +93,7 @@ struct GameView: View {
             CandyIconButton(symbol: "xmark", color: Theme.accentUI, label: "Schließen", action: onClose)
             Spacer()
             VStack(spacing: 0) {
-                Text("Level \(level.id)")
+                Text(level.title)
                     .font(Theme.title(13, weight: .heavy))
                     .candyText()
                 Text(level.name)

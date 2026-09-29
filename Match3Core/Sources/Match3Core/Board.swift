@@ -88,6 +88,11 @@ public struct Board: Hashable {
         self[p]?.kind.color
     }
 
+    /// Does the piece at `p` count as this colour for matches? Mixed candies count as both of theirs.
+    public func has(_ color: CandyColor, at p: Position) -> Bool {
+        self[p]?.kind.matches(color) ?? false
+    }
+
     /// A piece that can be swapped by the player.
     public func isSwappable(_ p: Position) -> Bool {
         guard isPlayable(p), let piece = self[p] else { return false }
@@ -217,7 +222,7 @@ public struct Board: Hashable {
     ///
     /// Tokens: `R O Y G B P` colours, suffix `-` striped horizontal, `|` striped vertical,
     /// `@` wrapped, `!` wrapped (armed), `>` fish. `*` colour bomb, `C` chocolate, `X2` blocker with 2 hits,
-    /// `I` cherry, `H` hazelnut, `_` empty, `#` hole.
+    /// `I` cherry, `H` hazelnut, `%RY` mixed candy (red and yellow), `_` empty, `#` hole.
     /// Lower-case prefixes add overlays: `j` jelly, `k` double jelly, `l` lock. Example: `jlR-`.
     public static func parse(_ lines: [String]) -> Board {
         let grid = lines.map { $0.split(whereSeparator: { $0 == " " }).map(String.init) }
@@ -247,6 +252,10 @@ public struct Board: Hashable {
                 case "X": kind = .blocker(hits: Int(body.dropFirst()) ?? 1)
                 case "I": kind = .ingredient(.cherry)
                 case "H": kind = .ingredient(.hazelnut)
+                case "%":
+                    let tokens = body.dropFirst().compactMap(CandyColor.init(token:))
+                    guard tokens.count == 2 else { preconditionFailure("mixed candy needs two colours: \(token)") }
+                    kind = .mixed(tokens[0], tokens[1])
                 default:
                     guard let color = CandyColor(token: head) else { preconditionFailure("unknown token \(token)") }
                     var special = Special.none
@@ -284,6 +293,7 @@ public struct Board: Hashable {
                 case let .blocker(hits): return prefix + "X\(hits)"
                 case .ingredient(.cherry): return prefix + "I"
                 case .ingredient(.hazelnut): return prefix + "H"
+                case let .mix(a, b): return prefix + "%" + String(a.token) + String(b.token)
                 case let .candy(color, special):
                     let suffix: String
                     switch special {

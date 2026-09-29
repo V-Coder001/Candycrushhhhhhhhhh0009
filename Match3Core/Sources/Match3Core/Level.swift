@@ -7,18 +7,20 @@ public enum Goal: Hashable, Codable {
     case collectIngredients(Int)
     /// Remove all chocolate.
     case clearChocolate
+    /// Make mixed candies and pop them.
+    case serveMixes(Int)
 }
 
 public struct GoalProgress: Hashable {
     public var goal: Goal
-    /// Score reached, jelly removed, ingredients collected or chocolate removed.
+    /// Score reached, jelly removed, ingredients collected, chocolate removed or mixed candies served.
     public var current: Int
     public var target: Int
 
     public var isMet: Bool { current >= target }
     public var remaining: Int { max(0, target - current) }
 
-    public static func evaluate(goals: [Goal], score: Int, board: Board, collected: Int,
+    public static func evaluate(goals: [Goal], score: Int, board: Board, collected: Int, served: Int = 0,
                                 initialJelly: Int, initialChocolate: Int) -> [GoalProgress] {
         goals.map { goal in
             switch goal {
@@ -33,6 +35,8 @@ public struct GoalProgress: Hashable {
                 // Chocolate can grow beyond its start size, so only an empty board counts as done.
                 let current = left == 0 ? initialChocolate : max(0, min(initialChocolate - 1, initialChocolate - left))
                 return GoalProgress(goal: goal, current: current, target: initialChocolate)
+            case let .serveMixes(count):
+                return GoalProgress(goal: goal, current: served, target: count)
             }
         }
     }
@@ -54,9 +58,11 @@ public struct Level: Hashable, Codable, Identifiable {
     public var starScores: [Int]
     public var layout: [String]
     public var maxIngredientsOnBoard: Int
+    /// Matches of two colours that touch make a mixed candy (prototype, Mischlabor only).
+    public var mixing: Bool
 
     public init(id: Int, name: String, moves: Int, colors: Int = 5, goals: [Goal], starScores: [Int],
-                layout: [String], maxIngredientsOnBoard: Int = 1) {
+                layout: [String], maxIngredientsOnBoard: Int = 1, mixing: Bool = false) {
         self.id = id
         self.name = name
         self.moves = moves
@@ -65,6 +71,7 @@ public struct Level: Hashable, Codable, Identifiable {
         self.starScores = starScores
         self.layout = layout
         self.maxIngredientsOnBoard = maxIngredientsOnBoard
+        self.mixing = mixing
     }
 
     public var rows: Int { layout.count }

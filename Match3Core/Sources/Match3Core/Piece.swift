@@ -59,6 +59,13 @@ public enum PieceKind: Hashable {
     case chocolate
     /// Blockade that needs several hits.
     case blocker(hits: Int)
+    /// Two-tone mixed candy, made where matches of two colours touch. It matches with either colour.
+    case mix(CandyColor, CandyColor)
+
+    /// A mixed candy with its colours in a fixed order, so red + yellow and yellow + red are the same sort.
+    public static func mixed(_ a: CandyColor, _ b: CandyColor) -> PieceKind {
+        a.rawValue <= b.rawValue ? .mix(a, b) : .mix(b, a)
+    }
 
     public static func plain(_ color: CandyColor) -> PieceKind { .candy(color, .none) }
 
@@ -72,10 +79,32 @@ public enum PieceKind: Hashable {
         return .none
     }
 
-    /// Candy, colour bomb and ingredients can be swapped and fall down.
+    /// Every colour this piece counts as when looking for matches.
+    public var colors: [CandyColor] {
+        switch self {
+        case let .candy(color, _): return [color]
+        case let .mix(a, b): return [a, b]
+        default: return []
+        }
+    }
+
+    public func matches(_ color: CandyColor) -> Bool {
+        switch self {
+        case let .candy(c, _): return c == color
+        case let .mix(a, b): return a == color || b == color
+        default: return false
+        }
+    }
+
+    public var isMix: Bool {
+        if case .mix = self { return true }
+        return false
+    }
+
+    /// Candy, colour bomb, ingredients and mixed candies can be swapped and fall down.
     public var isMovable: Bool {
         switch self {
-        case .candy, .colorBomb, .ingredient: return true
+        case .candy, .colorBomb, .ingredient, .mix: return true
         case .chocolate, .blocker: return false
         }
     }
