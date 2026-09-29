@@ -62,6 +62,7 @@ struct GameView: View {
                 progress.record(level: level, stars: stars, score: score)
             }
             controller.scene.scheduleHint()
+            if Demo.autoplay { controller.startAutoplay() }
         }
         .onChange(of: colorScheme) { _, scheme in
             controller.scene.isDark = scheme == .dark

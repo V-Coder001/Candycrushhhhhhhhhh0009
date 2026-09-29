@@ -238,7 +238,7 @@ final class GameScene: SKScene {
         }
         if let current = selected, current.isAdjacent(to: p) {
             clearSelection()
-            attemptSwap(current, p)
+            performSwap(current, p)
             return
         }
         touchStart = (p, location)
@@ -256,7 +256,7 @@ final class GameScene: SKScene {
             : Position(start.position.row + (dy > 0 ? -1 : 1), start.position.col)
         touchStart = nil
         clearSelection()
-        attemptSwap(start.position, target)
+        performSwap(start.position, target)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -292,7 +292,7 @@ final class GameScene: SKScene {
         selectionNode = nil
     }
 
-    private func attemptSwap(_ a: Position, _ b: Position) {
+    func performSwap(_ a: Position, _ b: Position) {
         guard board.isPlayable(b), let result = gameDelegate?.scene(self, requestSwap: a, to: b) else { return }
         isBusy = true
         Task { @MainActor in

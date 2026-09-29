@@ -29,7 +29,7 @@ final class GameController: ObservableObject, GameSceneDelegate {
 
     init(level: Level) {
         self.level = level
-        let game = Game(level: level)
+        let game = Demo.seed.map { Game(level: level, seed: $0) } ?? Game(level: level)
         self.game = game
         movesLeft = game.movesLeft
         goals = game.goalProgress
@@ -55,6 +55,19 @@ final class GameController: ObservableObject, GameSceneDelegate {
         combo = nil
         scene.reset(board: game.board)
         scene.scheduleHint()
+    }
+
+    /// Plays suggested moves by itself (demo videos and screenshots).
+    func startAutoplay() {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            while let self, self.status == .playing {
+                if !self.scene.isBusy, let (a, b) = self.game.hint() {
+                    self.scene.performSwap(a, b)
+                }
+                try? await Task.sleep(nanoseconds: 900_000_000)
+            }
+        }
     }
 
     // MARK: GameSceneDelegate

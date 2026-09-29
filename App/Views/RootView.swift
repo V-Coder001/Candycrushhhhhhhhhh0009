@@ -29,6 +29,9 @@ struct RootView: View {
                 .padding(.vertical, 20)
             }
         }
+        .onAppear {
+            if playing == nil, let level = Demo.level { playing = level }
+        }
         .fullScreenCover(item: $playing) { level in
             GameView(level: level,
                      onClose: { playing = nil },
