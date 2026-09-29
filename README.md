@@ -78,7 +78,16 @@ Schokolade entfernen.
 
 ## Level bauen
 
-Level stehen in `Match3Core/Sources/Match3Core/Levels.swift`, ein Zeichen pro Feld:
+Das Spiel hat 1012 Level in Episoden zu je sechs. Die ersten 12 sind von Hand gebaut, die übrigen 1000
+erzeugt `LevelGenerator.swift` aus einem festen Startwert pro Level: Sie sehen auf jedem Gerät und nach
+jedem Update gleich aus, ohne dass eine Level-Datei mitgeliefert wird. Der Generator kombiniert
+symmetrische Spielfeldformen mit Zielen (Punkte, Gelee, Zutaten, Schokolade und Kombinationen daraus)
+und Hindernissen. Die Schwierigkeit steigt über das ganze Spiel langsam an, und in jeder Episode ist das
+letzte Level das schwerste. Zugzahlen und Sterne-Grenzen sind mit einem Bot abgestimmt, der jedes Level
+auf vielen Startwerten durchspielt. Ein Test prüft eine Prüfsumme über alle erzeugten Level, damit sie
+sich nicht versehentlich ändern, denn der Spielstand hängt an der Level-Nummer.
+
+Handgebaute Level stehen in `Match3Core/Sources/Match3Core/Levels.swift`, ein Zeichen pro Feld:
 
 ```
 .  Bonbon          #  kein Feld         j  Gelee          J  doppeltes Gelee

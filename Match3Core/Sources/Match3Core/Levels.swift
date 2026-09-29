@@ -1,6 +1,9 @@
 extension Level {
-    /// The built-in campaign. Layout legend: see `Level`.
-    public static let campaign: [Level] = [
+    /// The whole campaign: the handmade opening levels, then the generated ones.
+    public static let campaign: [Level] = handmade + LevelGenerator.levels
+
+    /// The handmade opening levels. Layout legend: see `Level`.
+    static let handmade: [Level] = [
         Level(id: 1, name: "Erster Bissen", moves: 20, colors: 5,
               goals: [.score(2_500)], starScores: [2_500, 20_000, 34_000],
               layout: [

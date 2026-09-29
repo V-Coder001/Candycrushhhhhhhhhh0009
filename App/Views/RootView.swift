@@ -9,22 +9,30 @@ struct RootView: View {
     @State private var showSettings = false
 
     private static let spacing: CGFloat = 118
+    private static let levelsPerEpisode = 6
 
     var body: some View {
         ZStack {
             CandyBackdrop()
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 10) {
+                    // Lazy, one level at a time: the map has over a thousand levels.
+                    LazyVStack(spacing: 0) {
                         header
-                        map
                             .padding(.bottom, 80)
+                        let current = currentLevel?.id
+                        ForEach(Level.campaign) { level in
+                            mapRow(level, isCurrent: level.id == current)
+                                .id(level.id)
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
+                    .padding(.bottom, 80)
                 }
                 .onAppear {
-                    if let current = currentLevel { proxy.scrollTo(current.id, anchor: .center) }
+                    guard let current = currentLevel else { return }
+                    DispatchQueue.main.async { proxy.scrollTo(current.id, anchor: .center) }
                 }
             }
 
@@ -113,40 +121,39 @@ struct RootView: View {
 
     // MARK: Map
 
-    private var map: some View {
-        let count = Level.campaign.count
-        let height = CGFloat(count) * Self.spacing + 40
+    /// One level disc with the stretch of candy road down to the next one, which is drawn on top of it.
+    /// The first level of each episode also carries the episode sign.
+    private func mapRow(_ level: Level, isCurrent: Bool) -> some View {
+        let index = level.id - 1
+        let isLast = level.id == Level.campaign.count
+        let road = index...(isLast ? index : index + 1)
         return ZStack(alignment: .top) {
             // Candy road: a wide sugar-white band with pink stripes painted on.
-            MapPath(count: count, spacing: Self.spacing)
+            MapPath(indices: road, spacing: Self.spacing)
                 .stroke(Color(uiColor: UIColor(hex: 0x1A4D8F, alpha: 0.18)),
                         style: StrokeStyle(lineWidth: 34, lineCap: .round, lineJoin: .round))
                 .offset(y: 5)
-            MapPath(count: count, spacing: Self.spacing)
+            MapPath(indices: road, spacing: Self.spacing)
                 .stroke(Color.white, style: StrokeStyle(lineWidth: 30, lineCap: .round, lineJoin: .round))
-            MapPath(count: count, spacing: Self.spacing)
+            MapPath(indices: road, spacing: Self.spacing)
                 .stroke(Color(uiColor: Theme.accentUI.lighter(0.25)),
                         style: StrokeStyle(lineWidth: 12, lineCap: .butt, lineJoin: .round, dash: [12, 14]))
 
-            ForEach(Level.campaign) { level in
-                let index = level.id - 1
-                LevelNode(level: level,
-                          stars: progress.stars[level.id] ?? 0,
-                          unlocked: progress.isUnlocked(level),
-                          isCurrent: level.id == currentLevel?.id) {
-                    open(level)
-                }
-                .id(level.id)
-                .offset(x: MapPath.offset(for: index), y: MapPath.y(for: index, spacing: Self.spacing) - 50)
+            LevelNode(level: level,
+                      stars: progress.stars[level.id] ?? 0,
+                      unlocked: progress.isUnlocked(level),
+                      isCurrent: isCurrent) {
+                open(level)
             }
+            .offset(x: MapPath.offset(for: index), y: MapPath.y(for: 0, spacing: Self.spacing) - 50)
 
-            ForEach(0..<(count + 5) / 6, id: \.self) { episode in
-                EpisodeSign(number: episode + 1)
-                    .offset(y: MapPath.y(for: episode * 6, spacing: Self.spacing) - 108)
+            if index % Self.levelsPerEpisode == 0 {
+                EpisodeSign(number: index / Self.levelsPerEpisode + 1)
+                    .offset(y: MapPath.y(for: 0, spacing: Self.spacing) - 108)
             }
         }
-        .frame(height: height + 40, alignment: .top)
-        .padding(.top, 70)
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.spacing + (isLast ? 80 : 0), alignment: .top)
     }
 }
 
@@ -178,7 +185,9 @@ private struct Logo: View {
 private struct EpisodeSign: View {
     let number: Int
 
-    private static let names = ["Bonbonwiese", "Schokotal", "Zuckerwolken", "Karamellküste"]
+    private static let names = ["Bonbonwiese", "Schokotal", "Zuckerwolken", "Karamellküste", "Lakritzwald",
+                                "Marzipanberge", "Brausebucht", "Nougatinsel", "Honigtal", "Kaugummiwolken",
+                                "Waffelwüste", "Lollihain"]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -202,9 +211,10 @@ private struct EpisodeSign: View {
     }
 }
 
-/// Winding path the level discs sit on.
+/// Winding path the level discs sit on. Draws the stretch between the given levels; the first one sits at
+/// the top of the shape.
 struct MapPath: Shape {
-    let count: Int
+    let indices: ClosedRange<Int>
     let spacing: CGFloat
 
     static func offset(for index: Int) -> CGFloat {
@@ -217,14 +227,13 @@ struct MapPath: Shape {
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        guard count > 0 else { return path }
-        let points = (0..<count).map { i in
-            CGPoint(x: rect.midX + Self.offset(for: i), y: rect.minY + Self.y(for: i, spacing: spacing))
+        let points = indices.map { i in
+            CGPoint(x: rect.midX + Self.offset(for: i),
+                    y: rect.minY + Self.y(for: i - indices.lowerBound, spacing: spacing))
         }
-        path.move(to: points[0])
-        for i in 1..<points.count {
-            let a = points[i - 1]
-            let b = points[i]
+        guard let start = points.first else { return path }
+        path.move(to: start)
+        for (a, b) in zip(points, points.dropFirst()) {
             path.addCurve(to: b, control1: CGPoint(x: a.x, y: (a.y + b.y) / 2),
                           control2: CGPoint(x: b.x, y: (a.y + b.y) / 2))
         }

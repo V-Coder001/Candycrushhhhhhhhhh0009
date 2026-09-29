@@ -43,8 +43,10 @@ final class SwapTests: XCTestCase {
     }
 
     func testCascadesRunUntilBoardIsStable() {
-        for seed in 1...25 as ClosedRange<UInt64> {
-            for level in Level.campaign {
+        for level in Level.campaign {
+            // Every handmade level on many seeds, the generated ones on a couple each.
+            let seeds: ClosedRange<UInt64> = level.id < LevelGenerator.firstID ? 1...25 : 1...2
+            for seed in seeds {
                 let game = Game(level: level, seed: seed)
                 var score = 0
                 for _ in 0..<12 {
@@ -52,7 +54,8 @@ final class SwapTests: XCTestCase {
                     let moves = game.movesLeft
                     let result = game.swap(a, b)
                     XCTAssertTrue(result.isValid)
-                    XCTAssertEqual(game.movesLeft, moves - 1)
+                    // A won level turns its leftover moves into the sugar rush.
+                    XCTAssertEqual(game.movesLeft, game.status == .won ? 0 : moves - 1, "level \(level.id)")
                     XCTAssertFalse(MatchFinder.hasAnyMatch(in: game.board), "level \(level.id) seed \(seed)\n\(game.board)")
                     XCTAssertFalse(game.board.positions.contains { game.board[$0]?.kind.special == .wrappedArmed })
                     XCTAssertGreaterThanOrEqual(game.score, score)
@@ -471,7 +474,8 @@ final class LevelTests: XCTestCase {
 
     func testEveryLevelStartsPlayable() {
         for level in Level.campaign {
-            for seed in 1...15 as ClosedRange<UInt64> {
+            let seeds: ClosedRange<UInt64> = level.id < LevelGenerator.firstID ? 1...15 : 1...4
+            for seed in seeds {
                 let game = Game(level: level, seed: seed)
                 XCTAssertFalse(MatchFinder.hasAnyMatch(in: game.board), "\(level.name) seed \(seed)")
                 XCTAssertNotNil(game.hint(), "\(level.name) seed \(seed)")
