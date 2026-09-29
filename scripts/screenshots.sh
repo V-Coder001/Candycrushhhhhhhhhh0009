@@ -34,11 +34,11 @@ run; sleep 5; shot 1-levels
 run -demoLevel 3 -demoSeed 7; sleep 5; shot 2-jelly
 run -demoLevel 7 -demoSeed 3; sleep 5; shot 3-chocolate
 
-xcrun simctl io "$UDID" recordVideo --codec h264 --force "$OUT/gameplay.mp4" &
+xcrun simctl io "$UDID" recordVideo --codec h264 --force build/gameplay.mp4 &
 REC=$!
 sleep 2
 run -demoLevel 6 -demoSeed 11 -autoplay YES
-for i in 1 2 3 4; do sleep 4; shot "4-play-$i"; done
+sleep 4; shot 4-play
 sleep 3
 kill -INT $REC; wait $REC || true
 

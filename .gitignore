@@ -6,3 +6,4 @@ DerivedData/
 *.xcuserstate
 xcuserdata/
 Match3Core/Package.resolved
+docs/screenshots/*.mp4

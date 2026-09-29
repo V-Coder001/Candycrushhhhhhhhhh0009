@@ -3,6 +3,15 @@
 Ein ruhiges Match-3-Spiel für iOS im Stil von Lagom: warme Papierfarben, gedämpfte Bonbons,
 runde Schrift, keine Hektik. Arbeitstitel „Sött“ (schwedisch für „süß“).
 
+<p>
+  <img src="docs/screenshots/1-levels.png" width="200">
+  <img src="docs/screenshots/2-jelly.png" width="200">
+  <img src="docs/screenshots/3-chocolate.png" width="200">
+  <img src="docs/screenshots/5-dark.png" width="200">
+</p>
+
+Die Screenshots erzeugt die CI im iPhone-Simulator (`scripts/screenshots.sh`).
+
 ## Projekt öffnen
 
 1. `Soett.xcodeproj` in Xcode 16 oder neuer öffnen.
