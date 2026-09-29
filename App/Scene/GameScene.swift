@@ -109,7 +109,7 @@ final class GameScene: SKScene {
 
     private func rebuild() {
         guard board.columns > 0, size.width > 1, size.height > 1 else { return }
-        tile = max(10, floor(min(size.width / CGFloat(board.columns), size.height / CGFloat(board.rows))))
+        tile = max(10, floor(min((size.width - 14) / CGFloat(board.columns), (size.height - 14) / CGFloat(board.rows))))
         boardNode.removeAllActions()
         boardNode.position = .zero
         [tileLayer, pieceLayer, overlayLayer, effectLayer].forEach { $0.removeAllChildren() }
@@ -123,8 +123,19 @@ final class GameScene: SKScene {
 
         // Only the board area shows pieces, so refills slide in from behind the top edge.
         let mask = SKNode()
+        // Board frame: a light rim and a deep blue base under the translucent tiles.
+        for (grow, color, z) in [(12.0, UIColor(hex: 0xF2FAFF), -3.0), (5.0, UIColor(hex: 0x2F6DB5), -2.0)] as [(CGFloat, UIColor, CGFloat)] {
+            for p in board.positions {
+                let node = SKShapeNode(rectOf: CGSize(width: tile + grow, height: tile + grow), cornerRadius: tile * 0.2)
+                node.fillColor = color
+                node.strokeColor = .clear
+                node.position = point(for: p)
+                node.zPosition = z
+                tileLayer.addChild(node)
+            }
+        }
         for p in board.positions {
-            let tileNode = SKShapeNode(rectOf: CGSize(width: tile - 2, height: tile - 2), cornerRadius: tile * 0.2)
+            let tileNode = SKShapeNode(rectOf: CGSize(width: tile - 3, height: tile - 3), cornerRadius: tile * 0.14)
             let alt = (p.row + p.col).isMultiple(of: 2)
             tileNode.fillColor = (alt ? Theme.tileUI : Theme.tileAltUI).resolved(dark: isDark)
             tileNode.strokeColor = .clear
@@ -153,9 +164,9 @@ final class GameScene: SKScene {
                 jellyNodes[p] = node
                 return node
             }()
-            node.fillColor = Theme.jellyUI.withAlphaComponent(cell.jelly >= 2 ? 0.75 : 0.42)
-            node.strokeColor = Theme.jellyUI.darker(0.1).withAlphaComponent(0.6)
-            node.lineWidth = 1.5
+            node.fillColor = Theme.jellyUI.withAlphaComponent(cell.jelly >= 2 ? 0.95 : 0.6)
+            node.strokeColor = UIColor.white.withAlphaComponent(0.85)
+            node.lineWidth = cell.jelly >= 2 ? 3 : 1.5
         } else if let node = jellyNodes.removeValue(forKey: p) {
             node.run(.sequence([.group([.fadeOut(withDuration: 0.25), .scale(to: 1.15, duration: 0.25)]),
                                 .removeFromParent()]))

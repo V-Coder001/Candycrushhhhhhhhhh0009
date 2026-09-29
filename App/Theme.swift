@@ -2,34 +2,52 @@ import Match3Core
 import SwiftUI
 import UIKit
 
-/// Calm, warm and uncluttered: soft paper background, muted candy colours, rounded type.
+/// Bright, glossy candy-shop look: sky backdrop, saturated sweets, blue banners, white rounded type.
 enum Theme {
-    static let backgroundUI = dynamic(light: 0xF5F1EA, dark: 0x1B1A18)
-    static let surfaceUI = dynamic(light: 0xFFFDF9, dark: 0x262522)
-    static let tileUI = dynamic(light: 0xECE5DA, dark: 0x2D2B28)
-    static let tileAltUI = dynamic(light: 0xE5DDD0, dark: 0x32302C)
-    static let inkUI = dynamic(light: 0x2F2B26, dark: 0xEDE8E0)
-    static let mutedUI = dynamic(light: 0x8A8279, dark: 0x9C958B)
-    static let accentUI = UIColor(hex: 0xC47F68)
-    static let jellyUI = UIColor(hex: 0xE3A0B4)
-    static let starUI = UIColor(hex: 0xE2B355)
+    static let skyTopUI = UIColor(hex: 0x6CCBFF)
+    static let skyBottomUI = UIColor(hex: 0xD4F1FF)
+    static let seaUI = UIColor(hex: 0xF46CC6)
+    static let seaLightUI = UIColor(hex: 0xFFA6E4)
+    static let bannerTopUI = UIColor(hex: 0x63CEFF)
+    static let bannerBottomUI = UIColor(hex: 0x2485E0)
+    static let bannerEdgeUI = UIColor(hex: 0x1664B8)
+    static let boardUI = UIColor(hex: 0x1A5A9C, alpha: 0.42)
+    static let tileUI = UIColor(hex: 0xDDF2FF, alpha: 0.72)
+    static let tileAltUI = UIColor(hex: 0xC4E6FF, alpha: 0.62)
+    static let inkUI = UIColor(hex: 0x3A2A5C)
+    static let mutedUI = UIColor(hex: 0x7A6E96)
+    static let accentUI = UIColor(hex: 0xFF4FA3)
+    static let jellyUI = UIColor(hex: 0xFF7EC8)
+    static let starUI = UIColor(hex: 0xFFC727)
+    static let greenButtonUI = UIColor(hex: 0x3CCB4A)
 
-    static let background = Color(uiColor: backgroundUI)
-    static let surface = Color(uiColor: surfaceUI)
+    static let skyTop = Color(uiColor: skyTopUI)
+    static let skyBottom = Color(uiColor: skyBottomUI)
+    static let sea = Color(uiColor: seaUI)
+    static let seaLight = Color(uiColor: seaLightUI)
+    static let bannerTop = Color(uiColor: bannerTopUI)
+    static let bannerBottom = Color(uiColor: bannerBottomUI)
+    static let bannerEdge = Color(uiColor: bannerEdgeUI)
     static let ink = Color(uiColor: inkUI)
     static let muted = Color(uiColor: mutedUI)
     static let accent = Color(uiColor: accentUI)
     static let star = Color(uiColor: starUI)
     static let jelly = Color(uiColor: jellyUI)
+    static let surface = Color.white
+    static let greenButton = Color(uiColor: greenButtonUI)
+
+    static var banner: LinearGradient {
+        LinearGradient(colors: [bannerTop, bannerBottom], startPoint: .top, endPoint: .bottom)
+    }
 
     static func candy(_ color: CandyColor) -> UIColor {
         switch color {
-        case .red: return UIColor(hex: 0xDD7466)
-        case .orange: return UIColor(hex: 0xE8A15A)
-        case .yellow: return UIColor(hex: 0xE8C762)
-        case .green: return UIColor(hex: 0x86BA84)
-        case .blue: return UIColor(hex: 0x74A2D6)
-        case .purple: return UIColor(hex: 0xA68ECB)
+        case .red: return UIColor(hex: 0xF0303A)
+        case .orange: return UIColor(hex: 0xFF8A14)
+        case .yellow: return UIColor(hex: 0xFFD21A)
+        case .green: return UIColor(hex: 0x2FBF45)
+        case .blue: return UIColor(hex: 0x228BF2)
+        case .purple: return UIColor(hex: 0xA13FE0)
         }
     }
 
@@ -37,20 +55,26 @@ enum Theme {
     static func tint(for kind: PieceKind) -> UIColor {
         switch kind {
         case let .candy(color, _): return candy(color)
-        case .colorBomb: return UIColor(hex: 0x6B4636)
-        case .ingredient(.cherry): return UIColor(hex: 0xD2504F)
-        case .ingredient(.hazelnut): return UIColor(hex: 0xB07A4A)
-        case .chocolate: return UIColor(hex: 0x7A4B37)
-        case .blocker: return UIColor(hex: 0xF1E8DA)
+        case .colorBomb: return UIColor(hex: 0x6B3A22)
+        case .ingredient(.cherry): return UIColor(hex: 0xE3242B)
+        case .ingredient(.hazelnut): return UIColor(hex: 0xB0703A)
+        case .chocolate: return UIColor(hex: 0x6E3B22)
+        case .blocker: return UIColor(hex: 0xFFFFFF)
         }
     }
 
-    static func title(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
+    static func title(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
         .system(size: size, weight: weight, design: .rounded)
     }
+}
 
-    private static func dynamic(light: UInt32, dark: UInt32) -> UIColor {
-        UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) }
+extension View {
+    /// White candy-shop lettering with a dark outline, readable on any backdrop.
+    func candyText(_ outline: Color = Theme.bannerEdge) -> some View {
+        foregroundStyle(.white)
+            .shadow(color: outline, radius: 0, x: 1.5, y: 1.5)
+            .shadow(color: outline, radius: 0, x: -1, y: -1)
+            .shadow(color: outline.opacity(0.6), radius: 2, y: 2)
     }
 }
 

@@ -103,35 +103,50 @@ final class CandyArt {
     static func shapePath(_ color: CandyColor, in r: CGRect) -> UIBezierPath {
         let c = CGPoint(x: r.midX, y: r.midY)
         let w = r.width
+        let h = r.height
         switch color {
         case .red:
-            return UIBezierPath(ovalIn: r.insetBy(dx: w * 0.03, dy: w * 0.03))
+            // Jelly bean, tilted.
+            let bean = UIBezierPath(roundedRect: CGRect(x: -w * 0.5, y: -h * 0.3, width: w, height: h * 0.6),
+                                    cornerRadius: h * 0.3)
+            bean.apply(CGAffineTransform(rotationAngle: -.pi / 5))
+            bean.apply(CGAffineTransform(translationX: c.x, y: c.y))
+            return bean
         case .orange:
-            return UIBezierPath(roundedRect: r.insetBy(dx: w * 0.08, dy: w * 0.08), cornerRadius: w * 0.24)
+            // Round lozenge.
+            return UIBezierPath(ovalIn: r.insetBy(dx: w * 0.04, dy: w * 0.04))
         case .yellow:
+            // Drop.
+            let center = CGPoint(x: c.x, y: r.minY + h * 0.62)
+            let radius = w * 0.36
+            let top = CGPoint(x: c.x, y: r.minY)
+            let path = UIBezierPath()
+            path.move(to: top)
+            path.addCurve(to: CGPoint(x: center.x + radius, y: center.y),
+                          controlPoint1: CGPoint(x: c.x + w * 0.1, y: r.minY + h * 0.18),
+                          controlPoint2: CGPoint(x: center.x + radius, y: center.y - h * 0.22))
+            path.addArc(withCenter: center, radius: radius, startAngle: 0, endAngle: .pi, clockwise: true)
+            path.addCurve(to: top,
+                          controlPoint1: CGPoint(x: center.x - radius, y: center.y - h * 0.22),
+                          controlPoint2: CGPoint(x: c.x - w * 0.1, y: r.minY + h * 0.18))
+            path.close()
+            return path
+        case .green:
+            // Soft square chiclet.
+            return UIBezierPath(roundedRect: r.insetBy(dx: w * 0.07, dy: h * 0.07), cornerRadius: w * 0.26)
+        case .blue:
+            // Gem.
             let points = [CGPoint(x: c.x, y: r.minY), CGPoint(x: r.maxX, y: c.y),
                           CGPoint(x: c.x, y: r.maxY), CGPoint(x: r.minX, y: c.y)]
-            return roundedPolygon(points, radius: w * 0.12)
-        case .green:
-            let points = (0..<6).map { i -> CGPoint in
-                let angle = CGFloat(i) * .pi / 3 + .pi / 6
-                return CGPoint(x: c.x + cos(angle) * w * 0.5, y: c.y + sin(angle) * w * 0.5)
-            }
             return roundedPolygon(points, radius: w * 0.1)
-        case .blue:
-            let center = CGPoint(x: c.x, y: c.y + w * 0.08)
-            let points = [-90.0, 30.0, 150.0].map { degrees -> CGPoint in
-                let angle = CGFloat(degrees) * .pi / 180
-                return CGPoint(x: center.x + cos(angle) * w * 0.6, y: center.y + sin(angle) * w * 0.6)
-            }
-            return roundedPolygon(points, radius: w * 0.16)
         case .purple:
-            let points = (0..<10).map { i -> CGPoint in
-                let angle = CGFloat(i) * .pi / 5 - .pi / 2
-                let radius = i.isMultiple(of: 2) ? w * 0.53 : w * 0.28
-                return CGPoint(x: c.x + cos(angle) * radius, y: c.y + 0.03 * w + sin(angle) * radius)
+            // Scalloped cluster.
+            let points = (0..<12).map { i -> CGPoint in
+                let angle = CGFloat(i) * .pi / 6 - .pi / 2
+                let radius = i.isMultiple(of: 2) ? w * 0.52 : w * 0.4
+                return CGPoint(x: c.x + cos(angle) * radius, y: c.y + sin(angle) * radius)
             }
-            return roundedPolygon(points, radius: w * 0.05)
+            return roundedPolygon(points, radius: w * 0.12)
         }
     }
 
@@ -149,31 +164,50 @@ final class CandyArt {
 
     // MARK: Pieces
 
+    /// Saturated, shiny candy fill: drop shadow, radial body, dark rim and a bright highlight.
     private func fillGlossy(_ path: UIBezierPath, base: UIColor, in r: CGRect, _ cg: CGContext) {
         cg.saveGState()
-        cg.setShadow(offset: CGSize(width: 0, height: r.height * 0.035), blur: r.height * 0.07,
-                     color: UIColor.black.withAlphaComponent(0.2).cgColor)
+        cg.setShadow(offset: CGSize(width: 0, height: r.height * 0.05), blur: r.height * 0.06,
+                     color: base.darker(0.6).withAlphaComponent(0.45).cgColor)
         base.setFill()
         path.fill()
         cg.restoreGState()
 
         cg.saveGState()
         path.addClip()
-        let colors = [base.lighter(0.3).cgColor, base.cgColor, base.darker(0.12).cgColor] as CFArray
-        if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.55, 1]) {
-            cg.drawLinearGradient(gradient, start: CGPoint(x: r.midX, y: r.minY), end: CGPoint(x: r.midX, y: r.maxY),
-                                  options: [])
+        let colors = [base.lighter(0.5).cgColor, base.cgColor, base.darker(0.38).cgColor] as CFArray
+        if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.45, 1]) {
+            let center = CGPoint(x: r.minX + r.width * 0.4, y: r.minY + r.height * 0.32)
+            cg.drawRadialGradient(gradient, startCenter: center, startRadius: 0,
+                                  endCenter: CGPoint(x: r.midX, y: r.midY), endRadius: r.width * 0.62,
+                                  options: [.drawsAfterEndLocation])
         }
-        UIColor.white.withAlphaComponent(0.35).setFill()
-        UIBezierPath(ovalIn: CGRect(x: r.minX + r.width * 0.22, y: r.minY + r.height * 0.14,
-                                    width: r.width * 0.3, height: r.height * 0.17)).fill()
+        path.lineWidth = r.width * 0.05
+        base.darker(0.3).withAlphaComponent(0.6).setStroke()
+        path.stroke()
+
+        let highlight = UIBezierPath(ovalIn: CGRect(x: -r.width * 0.2, y: -r.height * 0.1,
+                                                    width: r.width * 0.4, height: r.height * 0.2))
+        highlight.apply(CGAffineTransform(rotationAngle: -.pi / 7))
+        highlight.apply(CGAffineTransform(translationX: r.minX + r.width * 0.38, y: r.minY + r.height * 0.26))
+        cg.saveGState()
+        highlight.addClip()
+        let shine = [UIColor.white.withAlphaComponent(0.95).cgColor, UIColor.white.withAlphaComponent(0.15).cgColor] as CFArray
+        if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: shine, locations: [0, 1]) {
+            cg.drawLinearGradient(gradient, start: CGPoint(x: r.midX, y: r.minY + r.height * 0.14),
+                                  end: CGPoint(x: r.midX, y: r.minY + r.height * 0.38), options: [])
+        }
+        cg.restoreGState()
+        UIColor.white.withAlphaComponent(0.55).setFill()
+        UIBezierPath(ovalIn: CGRect(x: r.minX + r.width * 0.66, y: r.minY + r.height * 0.64,
+                                    width: r.width * 0.08, height: r.width * 0.08)).fill()
         cg.restoreGState()
     }
 
     private func drawCandy(_ color: CandyColor, _ special: Special, in rect: CGRect, _ cg: CGContext) {
         let base = Theme.candy(color)
         let isWrapped = special == .wrapped || special == .wrappedArmed
-        let r = rect.insetBy(dx: rect.width * (isWrapped ? 0.2 : 0.09), dy: rect.height * (isWrapped ? 0.2 : 0.09))
+        let r = rect.insetBy(dx: rect.width * (isWrapped ? 0.18 : 0.05), dy: rect.height * (isWrapped ? 0.18 : 0.05))
         let path = Self.shapePath(color, in: r)
 
         if isWrapped {
