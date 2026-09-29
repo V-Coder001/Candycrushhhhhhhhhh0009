@@ -145,14 +145,15 @@ struct HUDView: View {
             .frame(width: 84, height: 84)
             .offset(y: 10)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 ForEach(Array(controller.goals.enumerated()), id: \.offset) { _, goal in
                     GoalChip(progress: goal)
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 8)
             .padding(.vertical, 8)
             .background(Capsule().fill(Color.white.opacity(0.25)))
+            .layoutPriority(1)
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 14)
@@ -186,6 +187,8 @@ struct GoalChip: View {
                 Text(label)
                     .font(Theme.title(15, weight: .black))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .fixedSize()
                     .contentTransition(.numericText())
                     .candyText()
             }
