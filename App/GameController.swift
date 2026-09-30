@@ -25,20 +25,35 @@ final class GameController: ObservableObject, GameSceneDelegate {
     /// Stars the running score has already passed (drives the HUD meter and its little fanfare).
     @Published private(set) var starsReached = 0
     @Published private(set) var showSugarRush = false
+    /// The hammer is picked up: the next tap on the board smashes that cell.
+    @Published var hammerArmed = false {
+        didSet { scene.hammerArmed = hammerArmed }
+    }
+    /// Boosters spent in this attempt (including extra moves taken at the start).
+    @Published private(set) var boostersUsed = 0
+    /// Booster earned by winning this level for the first time.
+    @Published private(set) var reward: Booster?
+    /// Short text over the HUD, e.g. "+5 Züge".
+    @Published private(set) var toast: String?
 
-    var onFinish: ((Level, _ stars: Int, _ score: Int) -> Void)?
+    /// Saves the result and returns the booster earned for a first win.
+    var onFinish: ((Level, _ stars: Int, _ score: Int) -> Booster?)?
+    /// The player's booster stock.
+    weak var inventory: ProgressStore?
 
     private var collectedShown = 0
     private var servedShown = 0
 
-    init(level: Level) {
+    init(level: Level, bonusMoves: Int = 0) {
         self.level = level
         let game = Demo.seed.map { Game(level: level, seed: $0) } ?? Game(level: level)
+        if bonusMoves > 0 { game.addMoves(bonusMoves) }
         self.game = game
         movesLeft = game.movesLeft
         goals = game.goalProgress
         scene = GameScene(board: game.board)
         scene.gameDelegate = self
+        if bonusMoves > 0 { boostersUsed = 1 }
     }
 
     var progressToThreeStars: Double {
@@ -59,6 +74,9 @@ final class GameController: ObservableObject, GameSceneDelegate {
         starsReached = 0
         showSugarRush = false
         showResult = false
+        hammerArmed = false
+        boostersUsed = 0
+        reward = nil
         SoundManager.shared.duckMusic(false)
         combo = nil
         scene.reset(board: game.board)
@@ -78,7 +96,85 @@ final class GameController: ObservableObject, GameSceneDelegate {
         }
     }
 
+    // MARK: Boosters
+
+    func tapBooster(_ booster: Booster) {
+        guard status == .playing, let inventory, inventory.count(of: booster) > 0 else {
+            Haptics.invalid()
+            return
+        }
+        switch booster {
+        case .hammer:
+            withAnimation(.snappy) { hammerArmed.toggle() }
+            Haptics.tap()
+        case .extraMoves:
+            // The last move may already have won the level while it is still animating.
+            guard game.status != .won, inventory.use(.extraMoves) else { return }
+            game.addMoves(Booster.extraMovesAmount)
+            boostersUsed += 1
+            withAnimation(.snappy) { movesLeft = game.movesLeft }
+            showToast("+\(Booster.extraMovesAmount) Züge")
+            SoundManager.shared.play(.special)
+            Haptics.special()
+        case .colorMixer:
+            guard !scene.isBusy, let mixed = game.useColorMixer() else { return }
+            inventory.use(.colorMixer)
+            boostersUsed += 1
+            withAnimation(.snappy) { hammerArmed = false }
+            scene.playColorMixer(to: mixed)
+        }
+    }
+
+    /// "Keine Züge mehr": spend extra moves and play on.
+    func continueWithExtraMoves() {
+        guard status == .lost, let inventory, inventory.use(.extraMoves) else { return }
+        game.addMoves(Booster.extraMovesAmount)
+        boostersUsed += 1
+        if game.board != scene.board {
+            // Reviving can shuffle a board without moves.
+            scene.reset(board: game.board)
+        }
+        status = .playing
+        stars = 0
+        bonus = 0
+        SoundManager.shared.duckMusic(false)
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            showResult = false
+            movesLeft = game.movesLeft
+        }
+        showToast("+\(Booster.extraMovesAmount) Züge")
+        scene.scheduleHint()
+    }
+
+    private func showToast(_ text: String) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { toast = text }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            if toast == text {
+                withAnimation(.easeOut(duration: 0.3)) { toast = nil }
+            }
+        }
+    }
+
     // MARK: GameSceneDelegate
+
+    func scene(_ scene: GameScene, requestHammerAt p: Position) -> MoveResult? {
+        guard status == .playing, hammerArmed, let inventory else { return nil }
+        // Not a target (an ingredient, say): the scene wiggles, the hammer stays in hand.
+        guard game.canHammer(p) else { return game.useHammer(at: p) }
+        guard inventory.use(.hammer) else {
+            hammerArmed = false
+            return nil
+        }
+        let result = game.useHammer(at: p)
+        boostersUsed += 1
+        let rushMoves = result.sugarRush.reduce(0) { $0 + $1.movesSpent }
+        withAnimation(.snappy) {
+            hammerArmed = false
+            movesLeft = game.movesLeft + rushMoves
+        }
+        return result
+    }
 
     func scene(_ scene: GameScene, requestSwap from: Position, to: Position) -> MoveResult? {
         guard status == .playing else { return nil }
@@ -141,6 +237,7 @@ final class GameController: ObservableObject, GameSceneDelegate {
         updateStarsReached()
         guard game.status != .playing, status == .playing else { return }
         status = game.status
+        hammerArmed = false
         stars = game.stars
         bonus = move.bonusScore
         SoundManager.shared.duckMusic(true)
@@ -150,7 +247,7 @@ final class GameController: ObservableObject, GameSceneDelegate {
         } else {
             SoundManager.shared.play(.lose)
         }
-        onFinish?(level, stars, game.score)
+        reward = onFinish?(level, stars, game.score)
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 700_000_000)
             withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { showResult = true }

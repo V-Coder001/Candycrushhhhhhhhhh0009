@@ -289,3 +289,87 @@ struct PulseHalo: View {
             .allowsHitTesting(false)
     }
 }
+
+// MARK: Boosters
+
+/// Round booster icon in its candy colour.
+struct BoosterBadge: View {
+    let booster: Booster
+    var size: CGFloat = 56
+    var enabled = true
+
+    var body: some View {
+        let color = enabled ? booster.color : UIColor(hex: 0xA7B7CC)
+        Image(systemName: booster.symbol)
+            .font(.system(size: size * 0.4, weight: .black))
+            .candyText(Color(uiColor: color.darker(0.45)))
+            .frame(width: size, height: size)
+            .background(GlossyCircle(color: color))
+    }
+}
+
+/// Booster in the game's bottom bar, with how many are left.
+struct BoosterButton: View {
+    let booster: Booster
+    let count: Int
+    var active = false
+    var disabled = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            BoosterBadge(booster: booster, enabled: count > 0)
+                .overlay(Circle().stroke(Color.white, lineWidth: active ? 4 : 0).padding(-5))
+                .scaleEffect(active ? 1.12 : 1)
+                .overlay(alignment: .topTrailing) {
+                    Text("\(count)")
+                        .font(Theme.title(13, weight: .black))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .frame(minWidth: 22, minHeight: 22)
+                        .background(Circle().fill(count > 0 ? Theme.accent : Color(uiColor: UIColor(hex: 0x8C9AAE))))
+                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                        .offset(x: 6, y: -4)
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.55), value: active)
+        }
+        .buttonStyle(CandyPressStyle())
+        .disabled(disabled)
+        .opacity(disabled ? 0.55 : 1)
+        .accessibilityLabel("\(booster.title), noch \(count)")
+        .accessibilityHint(booster.explanation)
+    }
+}
+
+/// Shown over the board while the hammer is picked up.
+struct HammerHint: View {
+    var body: some View {
+        Label("Tippe auf ein Feld", systemImage: "hammer.fill")
+            .font(Theme.title(15, weight: .heavy))
+            .candyText(Color(uiColor: Booster.hammer.color.darker(0.45)))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                Capsule().fill(Color(uiColor: Booster.hammer.color))
+                    .overlay(Capsule().stroke(.white, lineWidth: 2.5))
+                    .shadow(color: Color(uiColor: Booster.hammer.color.darker(0.4)), radius: 0, y: 3)
+            )
+    }
+}
+
+/// Short "+5 Züge" pop-up under the moves counter.
+struct BoosterToast: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(Theme.title(22, weight: .black))
+            .candyText(Color(uiColor: Booster.extraMoves.color.darker(0.45)))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .background(
+                Capsule().fill(Color(uiColor: Booster.extraMoves.color))
+                    .overlay(Capsule().stroke(.white, lineWidth: 2.5))
+            )
+    }
+}

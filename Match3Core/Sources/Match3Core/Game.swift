@@ -103,28 +103,97 @@ public final class Game {
 
         let combo = MatchFinder.isCombo(moving.kind, other.kind)
         var result = MoveResult(isValid: true, from: from, to: to, status: status, board: board)
-        var recentlyMoved: Set<Position> = []
         var chocolateDestroyed = false
+        result.steps = runCascades(combo: combo ? (center: to, other: from) : nil, preferred: [to, from],
+                                   detonate: [], chocolateDestroyed: &chocolateDestroyed)
+
+        if !chocolateDestroyed {
+            result.chocolateSpread = spreadChocolate()
+        }
+        finishMove(&result)
+        return result
+    }
+
+    // MARK: Boosters
+
+    /// The hammer can smash any candy, obstacle or lock. Ingredients are safe from it.
+    public func canHammer(_ p: Position) -> Bool {
+        guard status == .playing, board.isPlayable(p) else { return false }
+        if board.cell(p).locked { return true }
+        guard let piece = board[p] else { return false }
+        return !piece.kind.isIngredient
+    }
+
+    /// Hammer booster: hits one cell like a blast would (a special there goes off) and resolves the
+    /// cascades. Costs no move, so chocolate does not spread either.
+    @discardableResult
+    public func useHammer(at p: Position) -> MoveResult {
+        guard canHammer(p) else {
+            return MoveResult(isValid: false, from: p, to: p, status: status, board: board)
+        }
+        var result = MoveResult(isValid: true, from: p, to: p, status: status, board: board)
+        var chocolateDestroyed = false
+        result.steps = runCascades(combo: nil, preferred: [p], detonate: [p], chocolateDestroyed: &chocolateDestroyed)
+        if !result.steps.isEmpty {
+            result.steps[0].activations.insert(Activation(origin: p, kind: .hammer, affected: [p]), at: 0)
+        }
+        finishMove(&result)
+        return result
+    }
+
+    /// Extra moves booster. Before the start, during play or right after running out of moves:
+    /// a lost level goes on.
+    public func addMoves(_ count: Int) {
+        guard count > 0, status != .won else { return }
+        movesLeft += count
+        guard status == .lost else { return }
+        status = .playing
+        // The last move skipped the shuffle check because the level had just ended.
+        if MatchFinder.findPossibleMove(in: board) == nil { shuffle() }
+    }
+
+    /// Colour mixer booster: mixes all movable candies into a fresh board with no match and at least
+    /// one move. Nil when it cannot be used right now.
+    @discardableResult
+    public func useColorMixer() -> Board? {
+        guard status == .playing else { return nil }
+        let before = board
+        for _ in 0..<5 {
+            shuffle()
+            if board != before { return board }
+        }
+        return nil
+    }
+
+    // MARK: Resolving
+
+    /// Runs cascade steps until the board is stable. The combo, preferred cells and detonations only
+    /// apply to the first step.
+    private func runCascades(combo: (center: Position, other: Position)?, preferred: [Position],
+                             detonate: [Position], chocolateDestroyed: inout Bool) -> [CascadeStep] {
+        var steps: [CascadeStep] = []
+        var recentlyMoved: Set<Position> = []
         var index = 1
         while index < 200, let step = resolveStep(
             index: index,
-            combo: index == 1 && combo ? (center: to, other: from) : nil,
-            preferred: index == 1 ? [to, from] : [],
+            combo: index == 1 ? combo : nil,
+            preferred: index == 1 ? preferred : [],
             recentlyMoved: recentlyMoved,
-            chocolateDestroyed: &chocolateDestroyed
+            chocolateDestroyed: &chocolateDestroyed,
+            detonate: index == 1 ? detonate : []
         ) {
-            result.steps.append(step)
+            steps.append(step)
             score += step.scoreGained
             ingredientsCollected += step.collected.count
             mixesServed += step.served.count
             recentlyMoved = Set(step.falls.map(\.to) + step.spawns.map(\.position))
             index += 1
         }
+        return steps
+    }
 
-        if !chocolateDestroyed {
-            result.chocolateSpread = spreadChocolate()
-        }
-
+    /// Combo word, win or loss, sugar rush and the shuffle when no move is left.
+    private func finishMove(_ result: inout MoveResult) {
         let clearedCount = result.steps.reduce(0) { $0 + $1.cleared.count }
         result.comboWord = ComboWord.forMove(cascades: result.steps.count, cleared: clearedCount)
 
@@ -141,7 +210,6 @@ public final class Game {
         }
         result.status = status
         result.board = board
-        return result
     }
 
     // MARK: Sugar rush
