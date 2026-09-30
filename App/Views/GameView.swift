@@ -10,11 +10,12 @@ struct GameView: View {
     @StateObject private var controller: GameController
     @EnvironmentObject private var progress: ProgressStore
 
-    init(level: Level, onClose: @escaping () -> Void, onNext: (() -> Void)?) {
+    /// `bonusMoves`: extra moves booster taken on the start card.
+    init(level: Level, bonusMoves: Int = 0, onClose: @escaping () -> Void, onNext: (() -> Void)?) {
         self.level = level
         self.onClose = onClose
         self.onNext = onNext
-        _controller = StateObject(wrappedValue: GameController(level: level))
+        _controller = StateObject(wrappedValue: GameController(level: level, bonusMoves: bonusMoves))
     }
 
     var body: some View {
@@ -23,6 +24,15 @@ struct GameView: View {
 
             VStack(spacing: 14) {
                 HUDView(controller: controller)
+                    .overlay(alignment: .bottom) {
+                        if let toast = controller.toast {
+                            BoosterToast(text: toast)
+                                .offset(y: 34)
+                                .transition(.scale(scale: 0.4).combined(with: .opacity))
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .zIndex(1)
                 SpriteView(scene: controller.scene, preferredFramesPerSecond: 120, options: [.allowsTransparency])
                     .aspectRatio(CGFloat(level.columns) / CGFloat(level.rows), contentMode: .fit)
                     .frame(maxWidth: 560)
@@ -33,6 +43,15 @@ struct GameView: View {
                             .scaleEffect(1.3)
                     )
                     .padding(.horizontal, 4)
+                    .overlay(alignment: .top) {
+                        if controller.hammerArmed {
+                            HammerHint()
+                                .offset(y: -8)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                                .allowsHitTesting(false)
+                        }
+                    }
+                boosterBar
                 bottomBar
                 Spacer(minLength: 0)
             }
@@ -80,11 +99,26 @@ struct GameView: View {
         }
         .preferredColorScheme(.light)
         .onAppear {
+            controller.inventory = progress
             controller.onFinish = { level, stars, score in
                 progress.record(level: level, stars: stars, score: score)
             }
             controller.scene.scheduleHint()
             if Demo.autoplay { controller.startAutoplay() }
+        }
+    }
+
+    /// Hammer, extra moves and colour mixer, each with what is left in stock.
+    private var boosterBar: some View {
+        HStack(spacing: 22) {
+            ForEach(Booster.allCases) { booster in
+                BoosterButton(booster: booster,
+                              count: progress.count(of: booster),
+                              active: booster == .hammer && controller.hammerArmed,
+                              disabled: controller.status != .playing) {
+                    controller.tapBooster(booster)
+                }
+            }
         }
     }
 
@@ -289,6 +323,7 @@ struct SugarRushBanner: View {
 
 struct ResultView: View {
     @ObservedObject var controller: GameController
+    @EnvironmentObject private var progress: ProgressStore
     let onRetry: () -> Void
     let onNext: (() -> Void)?
     let onClose: () -> Void
@@ -351,6 +386,23 @@ struct ResultView: View {
                             .font(Theme.title(14, weight: .bold))
                             .foregroundStyle(Theme.accent)
                     }
+                    if won && controller.boostersUsed == 0 {
+                        Label("Ohne Booster geschafft", systemImage: "checkmark.seal.fill")
+                            .font(Theme.title(14, weight: .bold))
+                            .foregroundStyle(Theme.greenButton)
+                    }
+                }
+
+                if won, let reward = controller.reward {
+                    HStack(spacing: 10) {
+                        BoosterBadge(booster: reward, size: 34)
+                        Text("Belohnung: +1 \(reward.title)")
+                            .font(Theme.title(15, weight: .heavy))
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(Color(uiColor: reward.color.lighter(0.8))))
                 }
 
                 VStack(spacing: 12) {
@@ -359,6 +411,12 @@ struct ResultView: View {
                         CandyCapsuleButton(title: "Nochmal", color: Theme.candy(.blue), icon: "arrow.counterclockwise",
                                            action: onRetry)
                     } else {
+                        if !won && progress.count(of: .extraMoves) > 0 {
+                            CandyCapsuleButton(title: "+\(Booster.extraMovesAmount) Züge (\(progress.count(of: .extraMoves)))",
+                                               color: Booster.extraMoves.color, icon: Booster.extraMoves.symbol) {
+                                controller.continueWithExtraMoves()
+                            }
+                        }
                         CandyCapsuleButton(title: won ? "Nochmal" : "Nochmal versuchen", color: Theme.greenButtonUI,
                                            icon: "arrow.counterclockwise", action: onRetry)
                     }

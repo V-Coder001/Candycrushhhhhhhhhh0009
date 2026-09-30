@@ -9,6 +9,8 @@ protocol GameSceneDelegate: AnyObject {
     func sceneDidApply(_ step: CascadeStep)
     func sceneDidShow(_ word: ComboWord)
     func sceneDidFinish(_ move: MoveResult)
+    /// Hammer booster on this cell. Nil if not allowed right now; an invalid result wiggles the cell.
+    func scene(_ scene: GameScene, requestHammerAt p: Position) -> MoveResult?
     /// The level is won and the leftover moves are about to turn into striped candies.
     func sceneDidStartSugarRush()
     func sceneHint() -> (Position, Position)?
@@ -24,6 +26,13 @@ final class GameScene: SKScene {
 
     private(set) var board: Board
     private(set) var isBusy = false
+    /// While set, a tap on the board uses the hammer instead of selecting a candy.
+    var hammerArmed = false {
+        didSet {
+            if hammerArmed { clearSelection() }
+            touchStart = nil
+        }
+    }
 
     private let boardNode = SKNode()
     private let tileLayer = SKNode()
@@ -284,6 +293,10 @@ final class GameScene: SKScene {
             clearSelection()
             return
         }
+        if hammerArmed {
+            performHammer(p)
+            return
+        }
         if let current = selected, current.isAdjacent(to: p) {
             clearSelection()
             performSwap(current, p)
@@ -354,11 +367,49 @@ final class GameScene: SKScene {
         }
     }
 
+    func performHammer(_ p: Position) {
+        guard let result = gameDelegate?.scene(self, requestHammerAt: p) else { return }
+        guard result.isValid else {
+            if let piece = board[p], let node = sprites[piece.id] { nudge(node) }
+            sound.play(.invalid)
+            Haptics.invalid()
+            return
+        }
+        isBusy = true
+        Task { @MainActor in
+            await play(result)
+            isBusy = false
+            scheduleHint()
+        }
+    }
+
+    /// Colour mixer booster: every candy flies to its new place.
+    func playColorMixer(to mixed: Board) {
+        hideHint()
+        clearSelection()
+        isBusy = true
+        Task { @MainActor in
+            sound.play(.whoosh)
+            Haptics.special()
+            for (_, piece) in mixed.allPieces {
+                sprites[piece.id]?.fire(.sequence([.scale(to: 0.75, duration: 0.12), .wait(forDuration: 0.3),
+                                                   .scale(to: 1, duration: 0.15)]))
+            }
+            await animateShuffle(to: mixed)
+            reconcile(with: mixed)
+            isBusy = false
+            scheduleHint()
+        }
+    }
+
     // MARK: Playback
 
     private func play(_ result: MoveResult) async {
-        sound.play(.swap)
-        await animateSwap(result.from, result.to)
+        // Boosters hit a single cell (from == to) and skip the swap.
+        if result.from != result.to {
+            sound.play(.swap)
+            await animateSwap(result.from, result.to)
+        }
 
         for step in result.steps {
             await animate(step)
@@ -452,6 +503,10 @@ final class GameScene: SKScene {
 
         for activation in step.activations {
             showActivation(activation)
+        }
+        if step.activations.contains(where: { $0.kind == .hammer }) {
+            // Let the hammer swing down before the candy pops.
+            await wait(0.26)
         }
         if !step.activations.isEmpty {
             playActivationSounds(step.activations, index: step.index)
@@ -654,6 +709,8 @@ final class GameScene: SKScene {
                 await self?.wait(fly.duration)
                 self?.spark(at: end)
             }
+        case .hammer:
+            swingHammer(at: origin)
         case .wholeBoard:
             let flash = SKSpriteNode(color: .white, size: CGSize(width: boardWidth, height: boardHeight))
             flash.alpha = 0
@@ -672,6 +729,7 @@ final class GameScene: SKScene {
             case .area: effect = .bomb
             case .colorBomb, .wholeBoard: effect = .colorbomb
             case .fish: effect = .fish
+            case .hammer: effect = .crunch
             }
             guard played.insert(effect.rawValue).inserted else { continue }
             sound.play(effect, pitch: pitch, volume: effect == .bomb ? 0.8 : 1)
@@ -732,6 +790,47 @@ final class GameScene: SKScene {
         glow.zPosition = 2
         tileLayer.addChild(glow)
         glow.run(.sequence([.fadeOut(withDuration: 0.35), .removeFromParent()]))
+    }
+
+    private lazy var hammerTexture: SKTexture = {
+        let config = UIImage.SymbolConfiguration(pointSize: 96, weight: .black)
+        let image = UIImage(systemName: "hammer.fill", withConfiguration: config)?
+            .withTintColor(UIColor(hex: 0x9A5B34), renderingMode: .alwaysOriginal) ?? UIImage()
+        return SKTexture(image: image)
+    }()
+
+    /// Hammer booster: rises over the cell, swings down, sparks and a little shake on impact.
+    private func swingHammer(at target: CGPoint) {
+        let texture = hammerTexture
+        let aspect = texture.size().height > 0 ? texture.size().width / texture.size().height : 1
+        let hammer = SKSpriteNode(texture: texture)
+        hammer.size = CGSize(width: tile * 1.2 * aspect, height: tile * 1.2)
+        hammer.position = CGPoint(x: target.x + tile * 0.55, y: target.y + tile * 0.75)
+        hammer.zRotation = 0.9
+        hammer.alpha = 0
+        hammer.zPosition = 6
+        effectLayer.addChild(hammer)
+        let strike = SKAction.group([
+            .rotate(toAngle: -0.25, duration: 0.14),
+            .move(to: CGPoint(x: target.x + tile * 0.3, y: target.y + tile * 0.3), duration: 0.14),
+        ])
+        strike.timingMode = .easeIn
+        hammer.fire(.sequence([
+            .fadeIn(withDuration: 0.08),
+            .rotate(toAngle: 1.2, duration: 0.06),
+            strike,
+            .wait(forDuration: 0.12),
+            .fadeOut(withDuration: 0.15),
+            .removeFromParent(),
+        ]))
+        Task { @MainActor [weak self] in
+            await self?.wait(0.28)
+            guard let self else { return }
+            self.spark(at: target)
+            self.burst(at: target, color: .white, amount: 10)
+            self.shake(intensity: 0.5)
+            Haptics.explosion()
+        }
     }
 
     /// Rotating light rays behind a freshly made special candy.

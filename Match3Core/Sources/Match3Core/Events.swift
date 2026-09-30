@@ -19,6 +19,8 @@ public struct Activation: Hashable {
         /// Row and column (striped + striped) or three of each (striped + wrapped).
         case cross(width: Int)
         case wholeBoard
+        /// Hammer booster smashing one cell.
+        case hammer
     }
 
     public var origin: Position
@@ -56,7 +58,7 @@ public struct CascadeStep {
     public var isBigExplosion: Bool {
         activations.contains { activation in
             switch activation.kind {
-            case .lineHorizontal, .lineVertical, .fish: return false
+            case .lineHorizontal, .lineVertical, .fish, .hammer: return false
             case .area, .colorBomb, .cross, .wholeBoard: return true
             }
         } || cleared.count >= 12

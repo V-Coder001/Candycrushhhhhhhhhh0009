@@ -8,6 +8,8 @@ struct RootView: View {
     @State private var intro: Level?
     @State private var showSettings = false
     @State private var showLab = false
+    /// Extra moves taken on the start card for the level about to open.
+    @State private var bonusMoves = 0
 
     private static let spacing: CGFloat = 118
     private static let levelsPerEpisode = 6
@@ -46,8 +48,10 @@ struct RootView: View {
                     .onTapGesture { closeIntro() }
                     .transition(.opacity)
                 LevelIntroView(level: level, stars: progress.stars[level.id] ?? 0,
-                               onPlay: {
+                               onPlay: { withExtraMoves in
                                    closeIntro()
+                                   bonusMoves = withExtraMoves && progress.use(.extraMoves)
+                                       ? Booster.extraMovesAmount : 0
                                    playing = level
                                },
                                onClose: closeIntro)
@@ -63,7 +67,11 @@ struct RootView: View {
         }
         .fullScreenCover(item: $playing) { level in
             GameView(level: level,
-                     onClose: { playing = nil },
+                     bonusMoves: bonusMoves,
+                     onClose: {
+                         bonusMoves = 0
+                         playing = nil
+                     },
                      onNext: nextAction(after: level))
                 .id(level.id)
                 .environmentObject(progress)
@@ -95,7 +103,10 @@ struct RootView: View {
 
     private func nextAction(after level: Level) -> (() -> Void)? {
         guard let next = progress.nextLevel(after: level) else { return nil }
-        return { playing = next }
+        return {
+            bonusMoves = 0
+            playing = next
+        }
     }
 
     // MARK: Header
@@ -329,12 +340,18 @@ private struct StarArc: View {
     }
 }
 
-/// Card shown before a level starts: goals, moves and the best result so far.
+/// Card shown before a level starts: goals, moves, the best result so far and the boosters.
 struct LevelIntroView: View {
     let level: Level
     let stars: Int
-    let onPlay: () -> Void
+    /// Starts the level; true if the player takes the extra moves booster along.
+    let onPlay: (_ withExtraMoves: Bool) -> Void
     let onClose: () -> Void
+
+    @EnvironmentObject private var progress: ProgressStore
+    @State private var takeExtraMoves = false
+
+    private var moves: Int { level.moves + (takeExtraMoves ? Booster.extraMovesAmount : 0) }
 
     var body: some View {
         CandyPanel(title: level.title) {
@@ -364,12 +381,14 @@ struct LevelIntroView: View {
                         }
                     }
                     HStack(spacing: 12) {
-                        Text("\(level.moves)")
+                        Text("\(moves)")
                             .font(Theme.title(15, weight: .black))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
                             .candyText()
                             .frame(width: 30, height: 30)
                             .background(Circle().fill(Theme.banner))
-                        Text("in \(level.moves) Zügen")
+                        Text("in \(moves) Zügen")
                             .font(Theme.title(16, weight: .bold))
                             .foregroundStyle(Theme.muted)
                     }
@@ -379,7 +398,11 @@ struct LevelIntroView: View {
                 .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color(uiColor: UIColor(hex: 0xEAF6FF))))
 
-                CandyCapsuleButton(title: "Spielen", color: Theme.greenButtonUI, icon: "play.fill", action: onPlay)
+                boosterPicker
+
+                CandyCapsuleButton(title: "Spielen", color: Theme.greenButtonUI, icon: "play.fill") {
+                    onPlay(takeExtraMoves)
+                }
             }
         }
         .overlay(alignment: .topTrailing) {
@@ -387,6 +410,59 @@ struct LevelIntroView: View {
                 .offset(x: -4, y: -6)
         }
         .padding(24)
+    }
+}
+
+extension LevelIntroView {
+    /// Extra moves can be taken along now; hammer and colour mixer wait for the level.
+    private var boosterPicker: some View {
+        let extra = progress.count(of: .extraMoves)
+        return VStack(alignment: .leading, spacing: 10) {
+            Button {
+                guard extra > 0 else { return }
+                withAnimation(.snappy) { takeExtraMoves.toggle() }
+            } label: {
+                HStack(spacing: 12) {
+                    BoosterBadge(booster: .extraMoves, size: 34, enabled: extra > 0)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("+\(Booster.extraMovesAmount) Züge zum Start")
+                            .font(Theme.title(16, weight: .bold))
+                            .foregroundStyle(Theme.ink)
+                        Text(extra > 0 ? "noch \(extra)" : "keine mehr übrig")
+                            .font(Theme.title(13, weight: .semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+                    Spacer()
+                    Image(systemName: takeExtraMoves ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(takeExtraMoves ? Theme.greenButton : Theme.muted.opacity(0.5))
+                }
+            }
+            .buttonStyle(CandyPressStyle())
+            .disabled(extra == 0)
+            .accessibilityAddTraits(takeExtraMoves ? .isSelected : [])
+
+            HStack(spacing: 8) {
+                ForEach([Booster.hammer, .colorMixer]) { booster in
+                    HStack(spacing: 4) {
+                        Image(systemName: booster.symbol)
+                            .foregroundStyle(Color(uiColor: booster.color))
+                        Text("\(progress.count(of: booster))")
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .font(Theme.title(14, weight: .heavy))
+                }
+                Text("im Level einsetzbar")
+                    .font(Theme.title(13, weight: .semibold))
+                    .foregroundStyle(Theme.muted)
+            }
+            .accessibilityElement(children: .combine)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .fill(Color(uiColor: UIColor(hex: 0xEFFBEF))))
     }
 }
 

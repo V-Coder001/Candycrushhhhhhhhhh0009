@@ -76,6 +76,21 @@ Schokolade entfernen.
 **Hindernisse:** Schokolade (breitet sich aus, wenn in einem Zug keine zerstört wurde), Gitter
 (Bonbon ist fest, ein Treffer löst das Gitter), Zuckerwürfel-Blockaden (2 oder 3 Treffer).
 
+## Booster
+
+Jeder Spieler startet mit je 3 Boostern. Wer ein Level zum ersten Mal schafft, bekommt einen dazu
+(Hammer, Extra-Züge und Farbmischer wechseln sich ab). Der Vorrat liegt im `ProgressStore`.
+
+| Booster | Wann | Wirkung |
+| --- | --- | --- |
+| Hammer | im Level | Antippen, dann ein Feld wählen: zerschlägt Bonbon, Gitter oder Hindernis (Zutaten nicht). Ein Spezial-Bonbon dort zündet. Kettenreaktionen laufen normal weiter. |
+| Extra-Züge | vor dem Start, im Level, nach „Keine Züge mehr“ | +5 Züge. Auf der Startkarte zuschaltbar; nach einer Niederlage geht das Level damit weiter. |
+| Farbmischer | im Level | Mischt alle beweglichen Bonbons neu (ohne Treffer, mit mindestens einem Zug). |
+
+Hammer und Farbmischer kosten keinen Zug und lassen keine Schokolade wachsen. Wer ein Level ganz ohne
+Booster schafft, sieht auf dem Ergebnis „Ohne Booster geschafft“. Die Regeln stehen in `Game.useHammer`,
+`Game.addMoves` und `Game.useColorMixer`, die Tests in `BoosterTests.swift`.
+
 ## Mischlabor (Prototyp)
 
 Über den Knopf „Mischlabor“ auf der Karte gibt es fünf Test-Level für eine neue Mechanik:
