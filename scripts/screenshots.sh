@@ -30,7 +30,13 @@ xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Soett.ap
 run() { xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true; xcrun simctl launch "$UDID" "$BUNDLE" -sound NO -music NO -voice NO "$@"; }
 shot() { xcrun simctl io "$UDID" screenshot "$OUT/$1.png"; }
 
-run; sleep 5; shot 1-levels
+run; sleep 5; shot 0-home
+run -demoScreen training -demoSeed 3; sleep 5; shot 10-training
+run -demoScreen pairs -demoSeed 3; sleep 5; shot 11-pairs
+run -demoScreen sequence -demoSeed 3; sleep 5; shot 12-sequence
+run -demoScreen change -demoSeed 3; sleep 5; shot 13-change
+run -demoScreen list -demoSeed 3; sleep 5; shot 14-list
+run -demoScreen puzzle; sleep 5; shot 1-levels
 run -demoLevel 3 -demoSeed 7; sleep 5; shot 2-jelly
 run -demoLevel 7 -demoSeed 3; sleep 5; shot 3-chocolate
 
