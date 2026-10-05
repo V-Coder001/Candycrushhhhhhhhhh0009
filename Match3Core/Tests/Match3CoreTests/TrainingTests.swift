@@ -173,6 +173,11 @@ final class ChangeRoundTests: XCTestCase {
                     XCTAssertEqual(Set(task.options).count, 4)
                     XCTAssertEqual(task.options.filter { $0 == task.change }.count, 1)
                     XCTAssertTrue(task.options.allSatisfy { $0 > 0 })
+                    // Plausible slips only: never more than a few euros away from the right change.
+                    XCTAssertTrue(task.options.allSatisfy { abs($0 - task.change) <= 300 }, "\(task.options)")
+                    if ChangeRound.priceStep(level: level) >= 10 {
+                        XCTAssertTrue(task.options.allSatisfy { $0 % 10 == 0 }, "no odd cents on round-price levels")
+                    }
                     XCTAssertTrue(task.prices.allSatisfy { $0 % ChangeRound.priceStep(level: level) == 0 })
                 }
             }

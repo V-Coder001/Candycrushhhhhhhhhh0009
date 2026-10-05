@@ -48,9 +48,9 @@ public struct ChangeRound {
         let total = prices.reduce(0, +)
         let paid = [500, 1_000, 2_000, 5_000, 10_000].first { $0 > total } ?? 20_000
         let change = paid - total
-        // Wrong answers look like typical slips: a step off, a euro off, or the euros and cents mixed up.
+        // Wrong answers look like typical slips: a coin step off, a euro off, 10 or 50 cents off.
         var candidates = [change + step, change - step, change + 100, change - 100, change + 10, change - 10,
-                          change + 50, change - 50, (change % 100) * 100 + change / 100]
+                          change + 50, change - 50]
         candidates = rng.shuffled(candidates.filter { $0 > 0 && $0 != change && $0 < paid })
         var options = [change]
         for candidate in candidates where options.count < 4 && !options.contains(candidate) {
@@ -58,7 +58,7 @@ public struct ChangeRound {
         }
         var extra = 1
         while options.count < 4 {
-            let candidate = change + extra * 200
+            let candidate = change + extra * 100
             if !options.contains(candidate) { options.append(candidate) }
             extra += 1
         }

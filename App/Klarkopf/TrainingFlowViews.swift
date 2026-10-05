@@ -107,18 +107,17 @@ struct TrainingHeader: View {
                     .font(KTheme.bodyBold)
                     .foregroundStyle(KTheme.ink)
                 if let step, let total {
+                    Text("Teil \(step + 1) von \(total)")
+                        .font(KTheme.small)
+                        .foregroundStyle(KTheme.secondary)
                     HStack(spacing: 8) {
                         ForEach(0..<total, id: \.self) { i in
                             Capsule()
                                 .fill(i <= step ? KTheme.accent : KTheme.line)
                                 .frame(width: 28, height: 8)
                         }
-                        Text("Teil \(step + 1) von \(total)")
-                            .font(KTheme.small)
-                            .foregroundStyle(KTheme.secondary)
                     }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Teil \(step + 1) von \(total)")
+                    .accessibilityHidden(true)
                 }
             }
             Spacer()
