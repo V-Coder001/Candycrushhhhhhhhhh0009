@@ -191,6 +191,8 @@ struct RootView: View {
 
 /// "Sött" in glossy candy lettering.
 struct Logo: View {
+    var subtitle = "Bonbon-Puzzle"
+
     var body: some View {
         VStack(spacing: -6) {
             Text("Sött")
@@ -203,7 +205,7 @@ struct Logo: View {
                 .shadow(color: .white, radius: 0, x: 2.5, y: -2.5)
                 .shadow(color: .white, radius: 0, x: -2.5, y: 2.5)
                 .shadow(color: Color(uiColor: Theme.candy(.purple).darker(0.3)).opacity(0.6), radius: 0, y: 5)
-            Text("Bonbon-Puzzle")
+            Text(subtitle)
                 .font(Theme.title(14, weight: .heavy))
                 .candyText(Color(uiColor: Theme.candy(.purple).darker(0.3)))
                 .padding(.horizontal, 10)

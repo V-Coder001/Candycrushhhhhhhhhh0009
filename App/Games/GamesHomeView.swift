@@ -48,14 +48,11 @@ struct GamesHomeView: View {
                     HStack {
                         Color.clear.frame(width: 46, height: 46)
                         Spacer()
-                        Logo()
+                        Logo(subtitle: "Spielesammlung")
                         Spacer()
                         CandyIconButton(symbol: "gearshape.fill", color: Theme.accentUI, label: "Einstellungen",
                                         size: 46) { showSettings = true }
                     }
-                    Text("Spielesammlung")
-                        .font(Theme.title(22, weight: .black))
-                        .candyText()
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
                               spacing: 14) {
                         ForEach(CasualGame.allCases) { game in

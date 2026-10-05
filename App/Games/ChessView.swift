@@ -107,7 +107,7 @@ struct ChessView: View {
                         .onTapGesture { tap(square) }
                 }
             }
-            .frame(width: side, height: side)
+            .frame(width: side, height: side, alignment: .topLeading)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(.white.opacity(0.8), lineWidth: 3))
         }
