@@ -1,29 +1,30 @@
-# Klarkopf
+# Sött
 
-Ruhiges Gedächtnistraining für iOS, gedacht für Menschen ab 55: täglich etwa 10 Minuten, große Schrift,
-kein Zeitdruck, keine Werbung. Klarkopf verspricht geistige Aktivität, keine Wirkung gegen Krankheiten.
-Die App ist aus dem Bonbon-Spiel „Sött“ entstanden, das als Entspannungsspiel erhalten bleibt.
+Eine Spielesammlung für iOS mit entspannten Klassikern im bunten Bonbon-Look: das Bonbon-Puzzle (Match-3
+mit über 1000 Leveln), Block-Puzzle, 2048, Solitär und Schach gegen den Computer. Keine Werbung, kein Zeitdruck.
 
 <p>
   <img src="docs/screenshots/0-home.png" width="200">
-  <img src="docs/screenshots/11-pairs.png" width="200">
-  <img src="docs/screenshots/13-change.png" width="200">
-  <img src="docs/screenshots/1-levels.png" width="200">
+  <img src="docs/screenshots/10-blocks.png" width="200">
+  <img src="docs/screenshots/12-solitaire.png" width="200">
+  <img src="docs/screenshots/13-chess.png" width="200">
 </p>
 
 Die Screenshots erzeugt die CI im iPhone-Simulator (`scripts/screenshots.sh`).
 
-## Klarkopf
+## Spiele
 
-- **Tagestraining:** Einkaufsliste merken, zwei weitere Spiele, Einkaufsliste wieder abrufen, kurzer Rückblick.
-  Die zwei mittleren Spiele sind die, die am längsten nicht gespielt wurden (`DailyPlan`).
-- **Spiele:** Paare finden, Einkaufsliste, Reihenfolge nachtippen, Wechselgeld, dazu das Bonbon-Puzzle.
-- **Schwierigkeit:** Jedes Spiel hat 20 Stufen (`SkillLevel`). Zwei Runden mit mindestens 80 % machen es eine
-  Stufe schwerer, eine Runde unter 50 % eine Stufe leichter.
-- **Daten:** Stufen und Trainingstage bleiben auf dem Gerät (`TrainingStore`, UserDefaults).
-- Die Spiellogik liegt in `Match3Core/Sources/Match3Core/Training` und ist mit `swift test` getestet,
-  die Oberfläche in `App/Klarkopf`.
-- Demo-Startparameter für Screenshots: `-demoScreen training|pairs|sequence|change|list|puzzle`.
+| Spiel | Regeln | Logik |
+| --- | --- | --- |
+| Bonbon-Puzzle | Match-3 mit Spezial-Bonbons, Zielen und 1012 Leveln | `Match3Core` (Game, Levels, LevelGenerator) |
+| Block-Puzzle | Drei Formen ins 8×8-Feld ziehen, volle Reihen und Spalten räumen sich ab | `Games/BlockPuzzle.swift` |
+| 2048 | Wischen, gleiche Zahlen verschmelzen | `Games/Twenty48.swift` |
+| Solitär | Klondike, eine Karte ziehen, Antippen legt die Karte an den besten Platz | `Games/Klondike.swift` |
+| Schach | Alle Regeln, Computer in drei Stärken (Alpha-Beta-Suche bis drei Halbzüge) | `Games/Chess.swift` |
+
+Die Logik aller Spiele liegt in `Match3Core` und ist mit `swift test` getestet, beim Schach auch mit den
+Standard-Perft-Zählungen. Die Oberflächen liegen in `App/Games`. Rekorde und Siege speichert die App lokal.
+Demo-Startparameter für Screenshots: `-demoScreen candy|blocks|2048|solitaire|chess`.
 
 ## Projekt öffnen
 

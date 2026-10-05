@@ -70,7 +70,7 @@ final class SoundManager {
         if music?.isPlaying == false { music?.play() }
     }
 
-    /// Stops the music when leaving the Bonbon-Puzzle; the rest of Klarkopf is quiet.
+    /// Stops the music when leaving the Bonbon-Puzzle; the other games play without it.
     func stopMusic() {
         music?.pause()
     }
