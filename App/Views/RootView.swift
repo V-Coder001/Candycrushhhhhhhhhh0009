@@ -11,7 +11,7 @@ struct RootView: View {
     /// Extra moves taken on the start card for the level about to open.
     @State private var bonusMoves = 0
 
-    /// Set when the puzzle is opened from the Klarkopf start screen: the gear becomes a close button.
+    /// Set when the puzzle is opened from the games collection: the gear becomes a close button.
     private let onClose: (() -> Void)?
 
     private static let spacing: CGFloat = 118
@@ -190,7 +190,9 @@ struct RootView: View {
 }
 
 /// "Sött" in glossy candy lettering.
-private struct Logo: View {
+struct Logo: View {
+    var subtitle = "Bonbon-Puzzle"
+
     var body: some View {
         VStack(spacing: -6) {
             Text("Sött")
@@ -203,7 +205,7 @@ private struct Logo: View {
                 .shadow(color: .white, radius: 0, x: 2.5, y: -2.5)
                 .shadow(color: .white, radius: 0, x: -2.5, y: 2.5)
                 .shadow(color: Color(uiColor: Theme.candy(.purple).darker(0.3)).opacity(0.6), radius: 0, y: 5)
-            Text("Bonbon-Puzzle")
+            Text(subtitle)
                 .font(Theme.title(14, weight: .heavy))
                 .candyText(Color(uiColor: Theme.candy(.purple).darker(0.3)))
                 .padding(.horizontal, 10)
