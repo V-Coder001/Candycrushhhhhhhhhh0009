@@ -70,6 +70,11 @@ final class SoundManager {
         if music?.isPlaying == false { music?.play() }
     }
 
+    /// Stops the music when leaving the Bonbon-Puzzle; the rest of Klarkopf is quiet.
+    func stopMusic() {
+        music?.pause()
+    }
+
     /// Dims the music under the results screen and brings it back afterwards.
     func duckMusic(_ ducked: Bool) {
         music?.setVolume(ducked ? 0.12 : 0.32, fadeDuration: 0.4)

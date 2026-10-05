@@ -2,8 +2,9 @@ import Match3Core
 import SwiftUI
 
 @main
-struct SoettApp: App {
+struct KlarkopfApp: App {
     @StateObject private var progress = ProgressStore()
+    @StateObject private var training = TrainingStore()
 
     init() {
         UserDefaults.standard.register(defaults: [
@@ -16,8 +17,12 @@ struct SoettApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            HomeView()
                 .environmentObject(progress)
+                .environmentObject(training)
+                .environment(\.locale, Locale(identifier: "de_DE"))
+                // Starts larger than the system default and still follows bigger settings.
+                .dynamicTypeSize(.xLarge ... .accessibility3)
         }
     }
 }
@@ -35,6 +40,9 @@ enum Demo {
     }
 
     static var autoplay: Bool { UserDefaults.standard.bool(forKey: "autoplay") }
+
+    /// Opens a Klarkopf screen: `training`, `pairs`, `sequence`, `change`, `list` or `puzzle`.
+    static var screen: String? { UserDefaults.standard.string(forKey: "demoScreen") }
 
     /// Opens the Mischlabor sheet.
     static var lab: Bool { UserDefaults.standard.bool(forKey: "demoLab") }

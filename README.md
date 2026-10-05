@@ -1,16 +1,29 @@
-# Sött
+# Klarkopf
 
-Ein Match-3-Spiel für iOS im bunten Bonbon-Look: Himmel mit Wolken, glänzende Bonbons,
-blaues Banner mit Zügen und Zielen. Arbeitstitel „Sött“ (schwedisch für „süß“).
+Ruhiges Gedächtnistraining für iOS, gedacht für Menschen ab 55: täglich etwa 10 Minuten, große Schrift,
+kein Zeitdruck, keine Werbung. Klarkopf verspricht geistige Aktivität, keine Wirkung gegen Krankheiten.
+Die App ist aus dem Bonbon-Spiel „Sött“ entstanden, das als Entspannungsspiel erhalten bleibt.
 
 <p>
+  <img src="docs/screenshots/0-home.png" width="200">
+  <img src="docs/screenshots/11-pairs.png" width="200">
+  <img src="docs/screenshots/13-change.png" width="200">
   <img src="docs/screenshots/1-levels.png" width="200">
-  <img src="docs/screenshots/2-jelly.png" width="200">
-  <img src="docs/screenshots/3-chocolate.png" width="200">
-  <img src="docs/screenshots/5-dark.png" width="200">
 </p>
 
 Die Screenshots erzeugt die CI im iPhone-Simulator (`scripts/screenshots.sh`).
+
+## Klarkopf
+
+- **Tagestraining:** Einkaufsliste merken, zwei weitere Spiele, Einkaufsliste wieder abrufen, kurzer Rückblick.
+  Die zwei mittleren Spiele sind die, die am längsten nicht gespielt wurden (`DailyPlan`).
+- **Spiele:** Paare finden, Einkaufsliste, Reihenfolge nachtippen, Wechselgeld, dazu das Bonbon-Puzzle.
+- **Schwierigkeit:** Jedes Spiel hat 20 Stufen (`SkillLevel`). Zwei Runden mit mindestens 80 % machen es eine
+  Stufe schwerer, eine Runde unter 50 % eine Stufe leichter.
+- **Daten:** Stufen und Trainingstage bleiben auf dem Gerät (`TrainingStore`, UserDefaults).
+- Die Spiellogik liegt in `Match3Core/Sources/Match3Core/Training` und ist mit `swift test` getestet,
+  die Oberfläche in `App/Klarkopf`.
+- Demo-Startparameter für Screenshots: `-demoScreen training|pairs|sequence|change|list|puzzle`.
 
 ## Projekt öffnen
 

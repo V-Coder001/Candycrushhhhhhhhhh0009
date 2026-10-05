@@ -11,8 +11,15 @@ struct RootView: View {
     /// Extra moves taken on the start card for the level about to open.
     @State private var bonusMoves = 0
 
+    /// Set when the puzzle is opened from the Klarkopf start screen: the gear becomes a close button.
+    private let onClose: (() -> Void)?
+
     private static let spacing: CGFloat = 118
     private static let levelsPerEpisode = 6
+
+    init(onClose: (() -> Void)? = nil) {
+        self.onClose = onClose
+    }
 
     var body: some View {
         ZStack {
@@ -21,11 +28,8 @@ struct RootView: View {
                 ScrollView(showsIndicators: false) {
                     // Lazy, one level at a time: the map has over a thousand levels.
                     LazyVStack(spacing: 0) {
-                        VStack(spacing: 12) {
-                            header
-                            MixLabButton { showLab = true }
-                        }
-                        .padding(.bottom, 80)
+                        header
+                            .padding(.bottom, 80)
                         let current = currentLevel?.id
                         ForEach(Level.campaign) { level in
                             mapRow(level, isCurrent: level.id == current)
@@ -136,8 +140,13 @@ struct RootView: View {
             Logo()
             Spacer()
 
-            CandyIconButton(symbol: "gearshape.fill", color: Theme.accentUI, label: "Einstellungen", size: 46) {
-                showSettings = true
+            if let onClose {
+                CandyIconButton(symbol: "xmark", color: Theme.accentUI, label: "Zurück zur Startseite", size: 46,
+                                action: onClose)
+            } else {
+                CandyIconButton(symbol: "gearshape.fill", color: Theme.accentUI, label: "Einstellungen", size: 46) {
+                    showSettings = true
+                }
             }
         }
     }
