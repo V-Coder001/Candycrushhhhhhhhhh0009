@@ -18,9 +18,7 @@ struct SolitaireView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(uiColor: UIColor(hex: 0x2E9E5B)), Color(uiColor: UIColor(hex: 0x1C6E3E))],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            CandyBackdrop(accent: Theme.neonMint, secondary: Theme.neonViolet)
             VStack(spacing: 14) {
                 GameTopBar(title: "Solitär", onClose: onClose) {
                     HStack(spacing: 8) {
@@ -38,7 +36,7 @@ struct SolitaireView: View {
                     Text("Gewonnen: \(wins)")
                 }
                 .font(Theme.title(16, weight: .heavy))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.muted)
                 .padding(.horizontal, 20)
 
                 GeometryReader { geo in
@@ -67,7 +65,7 @@ struct SolitaireView: View {
                              primary: "Neues Spiel", onPrimary: restart)
             }
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
     }
 
     // MARK: Layout
@@ -143,8 +141,9 @@ struct SolitaireView: View {
         let color = card.suit.isRed ? Color(uiColor: UIColor(hex: 0xD62B36)) : Color(uiColor: UIColor(hex: 0x1E1E28))
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: width * 0.12, style: .continuous)
-                .fill(.white)
-                .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
+                .fill(LinearGradient(colors: [.white, Color(uiColor: UIColor(hex: 0xF1ECFF))],
+                                     startPoint: .top, endPoint: .bottom))
+                .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
             VStack(alignment: .leading, spacing: -2) {
                 Text(card.rankText)
                     .font(.system(size: width * 0.36, weight: .bold, design: .rounded))
@@ -169,27 +168,27 @@ struct SolitaireView: View {
 
     private func cardBack(width: CGFloat, height: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: width * 0.12, style: .continuous)
-            .fill(LinearGradient(colors: [Color(uiColor: Theme.accentUI.lighter(0.2)), Color(uiColor: Theme.accentUI)],
-                                 startPoint: .top, endPoint: .bottom))
+            .fill(LinearGradient(colors: [Color(uiColor: Theme.neonPinkUI.lighter(0.15)), Theme.neonViolet],
+                                 startPoint: .topLeading, endPoint: .bottomTrailing))
             .overlay(
                 RoundedRectangle(cornerRadius: width * 0.09, style: .continuous)
                     .stroke(.white.opacity(0.7), lineWidth: 1.5)
                     .padding(width * 0.08)
             )
-            .overlay(Image(systemName: "heart.fill").font(.system(size: width * 0.3)).foregroundStyle(.white.opacity(0.5)))
+            .overlay(Image(systemName: "sparkles").font(.system(size: width * 0.3)).foregroundStyle(.white.opacity(0.6)))
             .frame(width: width, height: height)
-            .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
+            .shadow(color: Theme.neonPink.opacity(0.35), radius: 3)
     }
 
     private func emptySlot(width: CGFloat, height: CGFloat, symbol: String?) -> some View {
         RoundedRectangle(cornerRadius: width * 0.12, style: .continuous)
-            .stroke(.white.opacity(0.45), lineWidth: 1.5)
-            .background(RoundedRectangle(cornerRadius: width * 0.12, style: .continuous).fill(.black.opacity(0.08)))
+            .stroke(Theme.neonMint.opacity(0.45), lineWidth: 1.2)
+            .background(RoundedRectangle(cornerRadius: width * 0.12, style: .continuous).fill(.white.opacity(0.05)))
             .overlay {
                 if let symbol {
                     Image(systemName: symbol)
                         .font(.system(size: width * 0.36, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(Theme.neonMint.opacity(0.6))
                 }
             }
             .frame(width: width, height: height)

@@ -26,7 +26,7 @@ struct MixLabView: View {
                 }
                 .padding(16)
             }
-            .background(Color(uiColor: UIColor(hex: 0xEAF6FF)).ignoresSafeArea())
+            .background(CandyBackdrop(accent: Theme.neonViolet))
             .navigationTitle("Mischlabor")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -50,7 +50,7 @@ struct MixLabView: View {
         .foregroundStyle(Theme.ink)
         .fixedSize(horizontal: false, vertical: true)
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(.white))
+        .glassCard(cornerRadius: 20)
     }
 
     private func candy(_ kind: PieceKind) -> some View {
@@ -80,12 +80,12 @@ struct MixLabView: View {
                     ForEach(0..<3, id: \.self) { i in
                         Image(systemName: "star.fill")
                             .font(.system(size: 13, weight: .black))
-                            .foregroundStyle(i < stars ? Theme.star : Color(uiColor: UIColor(hex: 0xD6DDE8)))
+                            .foregroundStyle(i < stars ? Theme.star : Color.white.opacity(0.2))
                     }
                 }
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white))
+            .glassCard(cornerRadius: 18, glow: 0.2)
         }
         .buttonStyle(CandyPressStyle())
     }

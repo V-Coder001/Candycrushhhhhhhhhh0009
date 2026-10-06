@@ -62,7 +62,7 @@ struct RootView: View {
                     .transition(.scale(scale: 0.7).combined(with: .opacity))
             }
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
         .onAppear {
             SoundManager.shared.updateMusic()
             if playing == nil, let level = Demo.level { playing = level }
@@ -120,7 +120,7 @@ struct RootView: View {
             HStack(spacing: 6) {
                 Image(systemName: "star.fill")
                     .foregroundStyle(Theme.star)
-                    .shadow(color: .orange.opacity(0.7), radius: 0, y: 1.5)
+                    .shadow(color: .orange, radius: 6)
                 Text("\(progress.totalStars)")
                     .monospacedDigit()
                     .candyText()
@@ -128,13 +128,7 @@ struct RootView: View {
             .font(Theme.title(19))
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .background(
-                Capsule().fill(Theme.banner)
-                    .overlay(Capsule().fill(LinearGradient(colors: [.white.opacity(0.4), .clear],
-                                                           startPoint: .top, endPoint: .center)).padding(2))
-                    .overlay(Capsule().stroke(.white, lineWidth: 2.5))
-                    .shadow(color: Theme.bannerEdge.opacity(0.5), radius: 0, y: 3)
-            )
+            .glassCard(cornerRadius: 22, tint: Theme.star, glow: 0.3)
 
             Spacer()
             Logo()
@@ -144,7 +138,7 @@ struct RootView: View {
                 CandyIconButton(symbol: "xmark", color: Theme.accentUI, label: "Zurück zur Startseite", size: 46,
                                 action: onClose)
             } else {
-                CandyIconButton(symbol: "gearshape.fill", color: Theme.accentUI, label: "Einstellungen", size: 46) {
+                CandyIconButton(symbol: "gearshape.fill", color: Theme.neonVioletUI, label: "Einstellungen", size: 46) {
                     showSettings = true
                 }
             }
@@ -160,16 +154,15 @@ struct RootView: View {
         let isLast = level.id == Level.campaign.count
         let road = index...(isLast ? index : index + 1)
         return ZStack(alignment: .top) {
-            // Candy road: a wide sugar-white band with pink stripes painted on.
+            // Neon road: a glowing rim, a dark glass lane and a runway of light dashes.
             MapPath(indices: road, spacing: Self.spacing)
-                .stroke(Color(uiColor: UIColor(hex: 0x1A4D8F, alpha: 0.18)),
-                        style: StrokeStyle(lineWidth: 34, lineCap: .round, lineJoin: .round))
-                .offset(y: 5)
+                .stroke(Theme.neonPink.opacity(0.35), style: StrokeStyle(lineWidth: 38, lineCap: .round, lineJoin: .round))
             MapPath(indices: road, spacing: Self.spacing)
-                .stroke(Color.white, style: StrokeStyle(lineWidth: 30, lineCap: .round, lineJoin: .round))
+                .stroke(Color(uiColor: UIColor(hex: 0x1C0D46)),
+                        style: StrokeStyle(lineWidth: 32, lineCap: .round, lineJoin: .round))
             MapPath(indices: road, spacing: Self.spacing)
-                .stroke(Color(uiColor: Theme.accentUI.lighter(0.25)),
-                        style: StrokeStyle(lineWidth: 12, lineCap: .butt, lineJoin: .round, dash: [12, 14]))
+                .stroke(Theme.neonCyan, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round, dash: [10, 14]))
+                .shadow(color: Theme.neonCyan, radius: 4)
 
             LevelNode(level: level,
                       stars: progress.stars[level.id] ?? 0,
@@ -189,28 +182,34 @@ struct RootView: View {
     }
 }
 
-/// "Sött" in glossy candy lettering.
+/// "Sött" in glowing neon candy lettering.
 struct Logo: View {
     var subtitle = "Bonbon-Puzzle"
 
     var body: some View {
-        VStack(spacing: -6) {
+        VStack(spacing: -4) {
             Text("Sött")
-                .font(Theme.title(54, weight: .black))
-                .foregroundStyle(LinearGradient(colors: [Color(uiColor: Theme.accentUI.lighter(0.35)), Theme.accent,
-                                                         Color(uiColor: Theme.candy(.purple))],
+                .font(Theme.title(52, weight: .black))
+                .foregroundStyle(LinearGradient(colors: [Color(uiColor: Theme.neonPinkUI.lighter(0.55)), Theme.neonPink,
+                                                         Theme.neonViolet],
                                                 startPoint: .top, endPoint: .bottom))
-                .shadow(color: .white, radius: 0, x: 2.5, y: 2.5)
-                .shadow(color: .white, radius: 0, x: -2.5, y: -2.5)
-                .shadow(color: .white, radius: 0, x: 2.5, y: -2.5)
-                .shadow(color: .white, radius: 0, x: -2.5, y: 2.5)
-                .shadow(color: Color(uiColor: Theme.candy(.purple).darker(0.3)).opacity(0.6), radius: 0, y: 5)
-            Text(subtitle)
-                .font(Theme.title(14, weight: .heavy))
-                .candyText(Color(uiColor: Theme.candy(.purple).darker(0.3)))
+                .overlay(
+                    Text("Sött")
+                        .font(Theme.title(52, weight: .black))
+                        .foregroundStyle(LinearGradient(colors: [.white.opacity(0.7), .clear],
+                                                        startPoint: .top, endPoint: .center))
+                )
+                .shadow(color: Theme.neonPink.opacity(0.9), radius: 12)
+                .shadow(color: Theme.neonViolet.opacity(0.7), radius: 24)
+            Text(subtitle.uppercased())
+                .font(Theme.title(11, weight: .heavy))
+                .tracking(2.5)
+                .foregroundStyle(Theme.neonCyan)
+                .shadow(color: Theme.neonCyan.opacity(0.8), radius: 6)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(Color(uiColor: Theme.candy(.purple).lighter(0.1))))
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.white.opacity(0.06))
+                    .overlay(Capsule().strokeBorder(Theme.neonCyan.opacity(0.5), lineWidth: 1)))
         }
     }
 }
@@ -225,22 +224,23 @@ private struct EpisodeSign: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Episode \(number)")
-                .font(Theme.title(11, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.9))
+            Text("EPISODE \(number)")
+                .font(Theme.title(10, weight: .heavy))
+                .tracking(2)
+                .foregroundStyle(Theme.neonCyan)
             Text(Self.names[(number - 1) % Self.names.count])
                 .font(Theme.title(17, weight: .black))
-                .candyText(Color(uiColor: Theme.candy(.purple).darker(0.35)))
+                .candyText(Theme.neonPink)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 6)
         .background(
             Capsule()
-                .fill(LinearGradient(colors: [Color(uiColor: Theme.candy(.purple).lighter(0.25)),
-                                              Color(uiColor: Theme.candy(.purple))],
-                                     startPoint: .top, endPoint: .bottom))
-                .overlay(Capsule().stroke(.white, lineWidth: 2.5))
-                .shadow(color: Color(uiColor: Theme.candy(.purple).darker(0.4)), radius: 0, y: 4)
+                .fill(Color(uiColor: UIColor(hex: 0x1A0C42, alpha: 0.85)))
+                .overlay(Capsule().strokeBorder(LinearGradient(colors: [Theme.neonPink, Theme.neonCyan],
+                                                               startPoint: .leading, endPoint: .trailing),
+                                                lineWidth: 1.5))
+                .shadow(color: Theme.neonPink.opacity(0.6), radius: 10)
         )
     }
 }
@@ -285,7 +285,7 @@ private struct LevelNode: View {
     @State private var bounce = false
 
     private var color: UIColor {
-        guard unlocked else { return UIColor(hex: 0xA7B7CC) }
+        guard unlocked else { return Theme.lockedUI }
         let colors: [CandyColor] = [.red, .orange, .green, .blue, .purple, .yellow]
         return Theme.candy(colors[(level.id - 1) % colors.count])
     }
@@ -294,7 +294,7 @@ private struct LevelNode: View {
         Button(action: action) {
             ZStack {
                 if isCurrent {
-                    PulseHalo(color: .white)
+                    PulseHalo(color: Theme.neonCyan)
                         .frame(width: 150, height: 150)
                 }
                 GlossyCircle(color: color)
@@ -317,7 +317,7 @@ private struct LevelNode: View {
                         .font(.system(size: 34, weight: .bold))
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.white, Theme.accent)
-                        .shadow(color: Color(uiColor: Theme.accentUI.darker(0.4)), radius: 0, y: 3)
+                        .shadow(color: Theme.neonPink, radius: 8)
                         .offset(y: bounce ? -70 : -60)
                 }
             }
@@ -342,8 +342,8 @@ private struct StarArc: View {
             ForEach(0..<3, id: \.self) { i in
                 Image(systemName: "star.fill")
                     .font(.system(size: i == 1 ? 18 : 15, weight: .black))
-                    .foregroundStyle(i < stars ? Theme.star : Color.white.opacity(0.75))
-                    .shadow(color: i < stars ? .orange : Theme.bannerEdge.opacity(0.4), radius: 0, y: 1.5)
+                    .foregroundStyle(i < stars ? Theme.star : Color.white.opacity(0.22))
+                    .shadow(color: i < stars ? .orange.opacity(0.9) : .clear, radius: 4)
                     .rotationEffect(.degrees(Double(i - 1) * 18))
                     .offset(y: i == 1 ? -4 : 0)
             }
@@ -375,8 +375,8 @@ struct LevelIntroView: View {
                     ForEach(0..<3, id: \.self) { i in
                         Image(systemName: "star.fill")
                             .font(.system(size: i == 1 ? 46 : 36, weight: .black))
-                            .foregroundStyle(i < stars ? Theme.star : Color(uiColor: UIColor(hex: 0xE3DCEF)))
-                            .shadow(color: i < stars ? .orange : .gray.opacity(0.3), radius: 0, y: 3)
+                            .foregroundStyle(i < stars ? Theme.star : Color.white.opacity(0.15))
+                            .shadow(color: i < stars ? .orange : .clear, radius: 8)
                             .offset(y: i == 1 ? -6 : 0)
                     }
                 }
@@ -407,7 +407,9 @@ struct LevelIntroView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color(uiColor: UIColor(hex: 0xEAF6FF))))
+                    .fill(Color.white.opacity(0.06))
+                    .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)))
 
                 boosterPicker
 
@@ -473,7 +475,9 @@ extension LevelIntroView {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .fill(Color(uiColor: UIColor(hex: 0xEFFBEF))))
+            .fill(Theme.neonMint.opacity(0.08))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Theme.neonMint.opacity(0.3), lineWidth: 1)))
     }
 }
 
@@ -499,6 +503,7 @@ struct SettingsView: View {
                 }
             }
             .tint(Theme.accent)
+            .preferredColorScheme(.dark)
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: music) { _, _ in SoundManager.shared.updateMusic() }

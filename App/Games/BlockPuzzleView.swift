@@ -27,7 +27,7 @@ struct BlockPuzzleView: View {
 
     var body: some View {
         ZStack {
-            CandyBackdrop()
+            CandyBackdrop(accent: Theme.neonCyan, secondary: Theme.neonPink)
             VStack(spacing: 16) {
                 GameTopBar(title: "Block-Puzzle", onClose: onClose) {
                     CandyIconButton(symbol: "arrow.clockwise", color: UIColor(hex: 0x2485E0), label: "Neues Spiel",
@@ -53,7 +53,7 @@ struct BlockPuzzleView: View {
             if let praise {
                 Text(praise)
                     .font(Theme.title(40, weight: .black))
-                    .candyText(Color(uiColor: Theme.candy(.purple).darker(0.3)))
+                    .candyText(Theme.neonPink)
                     .transition(.scale.combined(with: .opacity))
                     .allowsHitTesting(false)
             }
@@ -65,7 +65,7 @@ struct BlockPuzzleView: View {
             }
         }
         .coordinateSpace(name: Self.space)
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
     }
 
     // MARK: Board
@@ -98,6 +98,10 @@ struct BlockPuzzleView: View {
             }
         }
         .aspectRatio(1, contentMode: .fit)
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(LinearGradient(colors: [Theme.neonCyan, Theme.neonViolet], startPoint: .top, endPoint: .bottom),
+                          lineWidth: 1.5))
+        .shadow(color: Theme.neonCyan.opacity(0.35), radius: 16)
         .background(
             GeometryReader { geo in
                 Color.clear
@@ -130,8 +134,7 @@ struct BlockPuzzleView: View {
         HStack(spacing: 12) {
             ForEach(0..<3, id: \.self) { index in
                 ZStack {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(.white.opacity(0.55))
+                    GlassShape(cornerRadius: 18, tint: Theme.neonCyan, glow: 0.15)
                     if let shape = game.hand.indices.contains(index) ? game.hand[index] : nil {
                         shapeView(shape, cell: max(10, cell * 0.5))
                             .opacity(drag?.index == index ? 0 : (game.fitsAnywhere(shape) ? 1 : 0.35))
@@ -210,6 +213,7 @@ struct BlockPuzzleView: View {
                 RoundedRectangle(cornerRadius: size * 0.2, style: .continuous)
                     .stroke(Color(uiColor: color.lighter(0.5)), lineWidth: max(1, size * 0.06))
             )
+            .shadow(color: Color(uiColor: color).opacity(0.6), radius: size * 0.12)
             .padding(size * 0.04)
     }
 

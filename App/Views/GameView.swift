@@ -37,9 +37,9 @@ struct GameView: View {
                     .aspectRatio(CGFloat(level.columns) / CGFloat(level.rows), contentMode: .fit)
                     .frame(maxWidth: 560)
                     .background(
-                        // Soft light behind the board so it floats over the sky.
-                        RadialGradient(colors: [.white.opacity(0.55), .white.opacity(0)], center: .center,
-                                       startRadius: 60, endRadius: 260)
+                        // Violet glow behind the board so it floats over the night.
+                        RadialGradient(colors: [Theme.neonViolet.opacity(0.55), Theme.neonViolet.opacity(0)],
+                                       center: .center, startRadius: 60, endRadius: 280)
                             .scaleEffect(1.3)
                     )
                     .padding(.horizontal, 4)
@@ -70,7 +70,7 @@ struct GameView: View {
                     .shadow(color: Color(uiColor: Theme.candy(.purple)), radius: 0, x: -2, y: -2)
                     .shadow(color: Color(uiColor: Theme.candy(.purple)), radius: 0, x: 3, y: -2)
                     .shadow(color: Color(uiColor: Theme.candy(.purple)), radius: 0, x: -2, y: 3)
-                    .shadow(color: .black.opacity(0.25), radius: 8, y: 6)
+                    .shadow(color: Theme.star.opacity(0.8), radius: 16)
                     .rotationEffect(.degrees(-6))
                     .transition(.scale(scale: 0.3).combined(with: .opacity))
                     .id(combo.id)
@@ -97,7 +97,7 @@ struct GameView: View {
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
         .onAppear {
             controller.inventory = progress
             controller.onFinish = { level, stars, score in
@@ -135,7 +135,7 @@ struct GameView: View {
                     .candyText()
             }
             Spacer()
-            CandyIconButton(symbol: "arrow.counterclockwise", color: Theme.candy(.blue), label: "Neu starten") {
+            CandyIconButton(symbol: "arrow.counterclockwise", color: Theme.neonVioletUI, label: "Neu starten") {
                 controller.restart()
             }
         }
@@ -173,14 +173,14 @@ struct HUDView: View {
                     .fill(RadialGradient(colors: low ? [Color(uiColor: Theme.accentUI.lighter(0.2)), Theme.accent]
                                                      : [Theme.bannerTop, Theme.bannerBottom],
                                          center: .top, startRadius: 4, endRadius: 50))
-                    .overlay(Circle().stroke(.white, lineWidth: 3))
+                    .overlay(Circle().strokeBorder(.white.opacity(0.8), lineWidth: 1.5))
                     .overlay(
                         Ellipse()
                             .fill(LinearGradient(colors: [.white.opacity(0.5), .clear], startPoint: .top, endPoint: .bottom))
                             .frame(width: 52, height: 26)
                             .offset(y: -22)
                     )
-                    .shadow(color: Theme.bannerEdge.opacity(0.5), radius: 0, y: 4)
+                    .shadow(color: low ? Theme.neonPink : Theme.neonViolet, radius: 12)
                     .animation(.easeInOut(duration: 0.3), value: low)
                 VStack(spacing: -2) {
                     Text("\(controller.movesLeft)")
@@ -204,23 +204,13 @@ struct HUDView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 8)
-            .background(Capsule().fill(Color.white.opacity(0.25)))
+            .background(Capsule().fill(Color.white.opacity(0.08)))
             .layoutPriority(1)
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Theme.banner)
-                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.9), lineWidth: 3))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center))
-                        .padding(4)
-                )
-                .shadow(color: Theme.bannerEdge.opacity(0.45), radius: 0, y: 4)
-        )
+        .glassCard(cornerRadius: 24, tint: Theme.neonPink, glow: 0.35)
     }
 }
 
@@ -268,7 +258,7 @@ struct StarMeter: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(Theme.bannerEdge.opacity(0.55))
+                Capsule().fill(Color.white.opacity(0.12))
                 Capsule()
                     .fill(LinearGradient(colors: [Color(uiColor: Theme.starUI.lighter(0.3)), Theme.star],
                                          startPoint: .top, endPoint: .bottom))
@@ -279,8 +269,8 @@ struct StarMeter: View {
                     let lit = index < reached
                     Image(systemName: "star.fill")
                         .font(.system(size: lit ? 17 : 13, weight: .black))
-                        .foregroundStyle(lit ? Theme.star : Color.white.opacity(0.6))
-                        .shadow(color: lit ? .orange : Theme.bannerEdge, radius: 0, y: 1.5)
+                        .foregroundStyle(lit ? Theme.star : Color.white.opacity(0.45))
+                        .shadow(color: lit ? .orange : .clear, radius: 4)
                         .scaleEffect(lit ? 1.15 : 1)
                         .offset(x: geo.size.width * mark - (lit ? 9 : 7))
                 }
@@ -305,12 +295,10 @@ struct SugarRushBanner: View {
                 .font(Theme.title(50, weight: .black))
                 .foregroundStyle(LinearGradient(colors: [Color(uiColor: Theme.accentUI.lighter(0.45)), Theme.accent],
                                                 startPoint: .top, endPoint: .bottom))
-                .shadow(color: .white, radius: 0, x: 3, y: 3)
-                .shadow(color: .white, radius: 0, x: -3, y: -3)
-                .shadow(color: .white, radius: 0, x: 3, y: -3)
-                .shadow(color: .white, radius: 0, x: -3, y: 3)
-                .shadow(color: Color(uiColor: Theme.candy(.purple)), radius: 0, y: 6)
-                .shadow(color: .black.opacity(0.25), radius: 10, y: 8)
+                .shadow(color: .white, radius: 0, x: 2, y: 2)
+                .shadow(color: .white, radius: 0, x: -2, y: -2)
+                .shadow(color: Theme.neonPink, radius: 14)
+                .shadow(color: Theme.neonViolet, radius: 28)
                 .rotationEffect(.degrees(-5))
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 20)
@@ -354,9 +342,9 @@ struct ResultView: View {
                                 .foregroundStyle(lit
                                     ? LinearGradient(colors: [Color(uiColor: Theme.starUI.lighter(0.4)), Theme.star],
                                                      startPoint: .top, endPoint: .bottom)
-                                    : LinearGradient(colors: [Color(uiColor: UIColor(hex: 0xE6E0F0))],
+                                    : LinearGradient(colors: [Color.white.opacity(0.15)],
                                                      startPoint: .top, endPoint: .bottom))
-                                .shadow(color: lit ? .orange : .gray.opacity(0.35), radius: 0, y: 4)
+                                .shadow(color: lit ? .orange : .clear, radius: 10)
                                 .scaleEffect(lit ? 1 : 0.8)
                                 .rotationEffect(.degrees(lit ? Double(i - 1) * 12 : 0))
                                 .offset(y: i == 1 ? -10 : 0)
@@ -402,7 +390,8 @@ struct ResultView: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Capsule().fill(Color(uiColor: reward.color.lighter(0.8))))
+                    .background(Capsule().fill(Color(uiColor: reward.color).opacity(0.2))
+                        .overlay(Capsule().strokeBorder(Color(uiColor: reward.color).opacity(0.6), lineWidth: 1)))
                 }
 
                 VStack(spacing: 12) {

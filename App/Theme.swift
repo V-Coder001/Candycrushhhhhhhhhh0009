@@ -2,29 +2,41 @@ import Match3Core
 import SwiftUI
 import UIKit
 
-/// Bright, glossy candy-shop look: sky backdrop, saturated sweets, blue banners, white rounded type.
+/// Neon candy: a deep violet night with pink, cyan and violet glow, glass panels and glossy sweets.
 enum Theme {
-    static let skyTopUI = UIColor(hex: 0x6CCBFF)
-    static let skyBottomUI = UIColor(hex: 0xD4F1FF)
-    static let seaUI = UIColor(hex: 0xF46CC6)
-    static let seaLightUI = UIColor(hex: 0xFFA6E4)
-    static let bannerTopUI = UIColor(hex: 0x63CEFF)
-    static let bannerBottomUI = UIColor(hex: 0x2485E0)
-    static let bannerEdgeUI = UIColor(hex: 0x1664B8)
-    static let boardUI = UIColor(hex: 0x1A5A9C, alpha: 0.42)
-    static let tileUI = UIColor(hex: 0xDDF2FF, alpha: 0.72)
-    static let tileAltUI = UIColor(hex: 0xC4E6FF, alpha: 0.62)
-    static let inkUI = UIColor(hex: 0x3A2A5C)
-    static let mutedUI = UIColor(hex: 0x7A6E96)
-    static let accentUI = UIColor(hex: 0xFF4FA3)
+    static let nightTopUI = UIColor(hex: 0x0C0522)
+    static let nightMidUI = UIColor(hex: 0x1D0C48)
+    static let nightBottomUI = UIColor(hex: 0x36105E)
+    static let neonPinkUI = UIColor(hex: 0xFF3DA5)
+    static let neonCyanUI = UIColor(hex: 0x2DE2FF)
+    static let neonVioletUI = UIColor(hex: 0x8A5CFF)
+    static let neonMintUI = UIColor(hex: 0x2EE6A6)
+    static let neonAmberUI = UIColor(hex: 0xFFB347)
+    static let bannerTopUI = UIColor(hex: 0x9B6BFF)
+    static let bannerBottomUI = UIColor(hex: 0x5A2FD8)
+    static let bannerEdgeUI = UIColor(hex: 0x2A1172)
+    static let boardUI = UIColor(hex: 0x150A36, alpha: 0.72)
+    static let tileUI = UIColor(white: 1, alpha: 0.08)
+    static let tileAltUI = UIColor(white: 1, alpha: 0.05)
+    static let inkUI = UIColor(hex: 0xF7F2FF)
+    static let mutedUI = UIColor(hex: 0xB4A4E4)
+    /// Dark text for light surfaces such as pale number tiles.
+    static let darkInkUI = UIColor(hex: 0x2A1A4E)
+    static let accentUI = UIColor(hex: 0xFF3DA5)
     static let jellyUI = UIColor(hex: 0xFF7EC8)
     static let starUI = UIColor(hex: 0xFFC727)
-    static let greenButtonUI = UIColor(hex: 0x3CCB4A)
+    static let greenButtonUI = UIColor(hex: 0x22D88F)
+    static let lockedUI = UIColor(hex: 0x4A3F7A)
 
-    static let skyTop = Color(uiColor: skyTopUI)
-    static let skyBottom = Color(uiColor: skyBottomUI)
-    static let sea = Color(uiColor: seaUI)
-    static let seaLight = Color(uiColor: seaLightUI)
+    static let nightTop = Color(uiColor: nightTopUI)
+    static let nightMid = Color(uiColor: nightMidUI)
+    static let nightBottom = Color(uiColor: nightBottomUI)
+    static let neonPink = Color(uiColor: neonPinkUI)
+    static let neonCyan = Color(uiColor: neonCyanUI)
+    static let neonViolet = Color(uiColor: neonVioletUI)
+    static let neonMint = Color(uiColor: neonMintUI)
+    static let neonAmber = Color(uiColor: neonAmberUI)
+    static let darkInk = Color(uiColor: darkInkUI)
     static let bannerTop = Color(uiColor: bannerTopUI)
     static let bannerBottom = Color(uiColor: bannerBottomUI)
     static let bannerEdge = Color(uiColor: bannerEdgeUI)
@@ -33,7 +45,6 @@ enum Theme {
     static let accent = Color(uiColor: accentUI)
     static let star = Color(uiColor: starUI)
     static let jelly = Color(uiColor: jellyUI)
-    static let surface = Color.white
     static let greenButton = Color(uiColor: greenButtonUI)
 
     static var banner: LinearGradient {
@@ -70,12 +81,36 @@ enum Theme {
 }
 
 extension View {
-    /// White candy-shop lettering with a dark outline, readable on any backdrop.
-    func candyText(_ outline: Color = Theme.bannerEdge) -> some View {
+    /// White lettering with a soft coloured glow, readable on the night backdrop and on candy buttons.
+    func candyText(_ glow: Color = Theme.neonViolet) -> some View {
         foregroundStyle(.white)
-            .shadow(color: outline, radius: 0, x: 1.5, y: 1.5)
-            .shadow(color: outline, radius: 0, x: -1, y: -1)
-            .shadow(color: outline.opacity(0.6), radius: 2, y: 2)
+            .shadow(color: glow.opacity(0.9), radius: 0, y: 1.5)
+            .shadow(color: glow.opacity(0.7), radius: 6)
+    }
+
+    /// Frosted dark glass with a neon rim and a soft glow in `tint`.
+    func glassCard(cornerRadius: CGFloat = 24, tint: Color = Theme.neonViolet, glow: Double = 0.35) -> some View {
+        background(GlassShape(cornerRadius: cornerRadius, tint: tint, glow: glow))
+    }
+}
+
+/// Background of `glassCard`, also usable on its own.
+struct GlassShape: View {
+    var cornerRadius: CGFloat = 24
+    var tint: Color = Theme.neonViolet
+    var glow: Double = 0.35
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        shape
+            .fill(Color(uiColor: UIColor(hex: 0x1A0C42, alpha: 0.62)))
+            .overlay(shape.fill(LinearGradient(colors: [.white.opacity(0.16), .white.opacity(0.03)],
+                                               startPoint: .top, endPoint: .bottom)))
+            .overlay(shape.strokeBorder(LinearGradient(colors: [tint.opacity(0.95), Theme.neonCyan.opacity(0.35),
+                                                                tint.opacity(0.5)],
+                                                       startPoint: .topLeading, endPoint: .bottomTrailing),
+                                        lineWidth: 1.5))
+            .shadow(color: tint.opacity(glow), radius: 16)
     }
 }
 

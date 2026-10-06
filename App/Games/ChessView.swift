@@ -21,9 +21,7 @@ struct ChessView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(uiColor: UIColor(hex: 0x6B4A2E)), Color(uiColor: UIColor(hex: 0x3E2A1A))],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            CandyBackdrop(accent: Theme.neonViolet, secondary: Theme.neonCyan)
             VStack(spacing: 16) {
                 GameTopBar(title: "Schach", onClose: onClose) {
                     HStack(spacing: 8) {
@@ -44,7 +42,7 @@ struct ChessView: View {
                     .padding(.horizontal, 12)
                 Text("Siege gegen den Computer: \(wins)")
                     .font(Theme.title(15, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(Theme.muted)
                 Spacer(minLength: 0)
             }
 
@@ -52,7 +50,7 @@ struct ChessView: View {
                 GameOverCard(title: result.title, message: result.message, primary: "Neues Spiel", onPrimary: restart)
             }
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
     }
 
     // MARK: Parts
@@ -63,10 +61,21 @@ struct ChessView: View {
                 Button { level = value } label: {
                     Text(Self.levelNames[value - 1])
                         .font(Theme.title(16, weight: .heavy))
-                        .foregroundStyle(level == value ? Color(uiColor: UIColor(hex: 0x3E2A1A)) : .white)
-                        .padding(.horizontal, 16)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
                         .padding(.vertical, 8)
-                        .background(Capsule().fill(level == value ? Color.white : Color.white.opacity(0.15)))
+                        .background(
+                            Capsule()
+                                .fill(level == value
+                                      ? LinearGradient(colors: [Color(uiColor: Theme.neonVioletUI.lighter(0.25)),
+                                                                Theme.neonViolet],
+                                                       startPoint: .top, endPoint: .bottom)
+                                      : LinearGradient(colors: [Color.white.opacity(0.08)], startPoint: .top,
+                                                       endPoint: .bottom))
+                                .overlay(Capsule().strokeBorder(level == value ? Color.white.opacity(0.7)
+                                                                    : Theme.neonViolet.opacity(0.5), lineWidth: 1))
+                                .shadow(color: level == value ? Theme.neonViolet : .clear, radius: 10)
+                        )
                 }
                 .buttonStyle(CandyPressStyle())
                 .accessibilityAddTraits(level == value ? .isSelected : [])
@@ -108,8 +117,11 @@ struct ChessView: View {
                 }
             }
             .frame(width: side, height: side, alignment: .topLeading)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(.white.opacity(0.8), lineWidth: 3))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(LinearGradient(colors: [Theme.neonCyan, Theme.neonViolet, Theme.neonPink],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2))
+            .shadow(color: Theme.neonViolet.opacity(0.6), radius: 18)
         }
         .aspectRatio(1, contentMode: .fit)
     }
@@ -117,9 +129,9 @@ struct ChessView: View {
     private func squareView(_ square: Int, cell: CGFloat, isTarget: Bool, isChecked: Bool) -> some View {
         let light = (Chess.file(square) + Chess.rank(square)) % 2 == 1
         let isLast = game.lastMove.map { $0.from == square || $0.to == square } ?? false
-        var fill = Color(uiColor: UIColor(hex: light ? 0xF0D9B5 : 0xB58863))
-        if isLast { fill = Color(uiColor: UIColor(hex: light ? 0xF2E27A : 0xD3B84A)) }
-        if selected == square { fill = Color(uiColor: UIColor(hex: 0x8CC56B)) }
+        var fill = Color(uiColor: UIColor(hex: light ? 0xE6DDFF : 0x8A72DA))
+        if isLast { fill = Color(uiColor: UIColor(hex: light ? 0xBDF5FF : 0x4FB8E0)) }
+        if selected == square { fill = Color(uiColor: UIColor(hex: 0x5FE3B0)) }
         if isChecked { fill = Color(uiColor: UIColor(hex: 0xE5534B)) }
         let piece = game.board[square]
         return ZStack {
@@ -127,7 +139,7 @@ struct ChessView: View {
             if let piece {
                 Text(piece.symbol)
                     .font(.system(size: cell * 0.78))
-                    .foregroundStyle(piece.side == .white ? Color.white : Color(uiColor: UIColor(hex: 0x1E1A16)))
+                    .foregroundStyle(piece.side == .white ? Color.white : Color(uiColor: UIColor(hex: 0x1A0F33)))
                     .shadow(color: piece.side == .white ? .black.opacity(0.9) : .white.opacity(0.35), radius: 0.8)
                     .shadow(color: piece.side == .white ? .black.opacity(0.6) : .clear, radius: 0.5)
             }
