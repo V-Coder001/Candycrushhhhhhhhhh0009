@@ -131,11 +131,11 @@ final class GameScene: SKScene {
             if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
                 ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
             }
-            UIColor.white.withAlphaComponent(0.55).setFill()
+            UIColor.white.withAlphaComponent(0.1).setFill()
             UIBezierPath(roundedRect: CGRect(x: size.width * 0.12, y: size.height * 0.06,
                                              width: size.width * 0.76, height: size.height * 0.12),
                          cornerRadius: size.height * 0.06).fill()
-            UIColor(hex: 0x6FA8DC, alpha: 0.35).setStroke()
+            UIColor(hex: 0x2DE2FF, alpha: 0.18).setStroke()
             path.lineWidth = 1.5
             path.stroke()
         }
@@ -158,12 +158,12 @@ final class GameScene: SKScene {
 
         // Only the board area shows pieces, so refills slide in from behind the top edge.
         let mask = SKNode()
-        // Board frame: soft shadow, white candy rim and a deep blue glass base under the tiles.
+        // Board frame: pink neon halo, a bright rim and a dark violet glass base under the tiles.
         let frameLayers: [(grow: CGFloat, color: UIColor, offset: CGFloat, z: CGFloat)] = [
-            (16, UIColor(hex: 0x1A4D8F, alpha: 0.28), -5, -5),
-            (14, UIColor(hex: 0xFFFFFF, alpha: 0.95), 0, -4),
-            (8, UIColor(hex: 0xBFE6FF), 0, -3),
-            (4, UIColor(hex: 0x2A64B8), 0, -2),
+            (18, UIColor(hex: 0xFF3DA5, alpha: 0.28), 0, -5),
+            (12, UIColor(hex: 0xC9A8FF, alpha: 0.9), 0, -4),
+            (9, UIColor(hex: 0x6A3FE0), 0, -3),
+            (5, UIColor(hex: 0x1A0C42), 0, -2),
         ]
         for layer in frameLayers {
             for p in board.positions {
@@ -176,8 +176,8 @@ final class GameScene: SKScene {
                 tileLayer.addChild(node)
             }
         }
-        let light = tileTexture(top: UIColor(hex: 0xEAF7FF), bottom: UIColor(hex: 0xC9E8FF))
-        let dark = tileTexture(top: UIColor(hex: 0xD3EDFF), bottom: UIColor(hex: 0xAFD9FB))
+        let light = tileTexture(top: UIColor(hex: 0x3C2A84), bottom: UIColor(hex: 0x2C1D66))
+        let dark = tileTexture(top: UIColor(hex: 0x30216E), bottom: UIColor(hex: 0x231754))
         for p in board.positions {
             let alt = (p.row + p.col).isMultiple(of: 2)
             let tileNode = SKSpriteNode(texture: alt ? light : dark)

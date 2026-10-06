@@ -17,7 +17,7 @@ struct Twenty48View: View {
 
     var body: some View {
         ZStack {
-            CandyBackdrop()
+            CandyBackdrop(accent: Theme.neonAmber, secondary: Theme.neonPink)
             VStack(spacing: 18) {
                 GameTopBar(title: "2048", onClose: onClose) {
                     CandyIconButton(symbol: "arrow.clockwise", color: UIColor(hex: 0x2485E0), label: "Neues Spiel",
@@ -29,7 +29,7 @@ struct Twenty48View: View {
                 }
                 Text("Wische, um alle Zahlen zu schieben. Gleiche Zahlen verschmelzen.")
                     .font(Theme.title(15, weight: .bold))
-                    .candyText()
+                    .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
                 board
@@ -48,7 +48,7 @@ struct Twenty48View: View {
                              secondary: "Weiterspielen", onSecondary: { withAnimation { showWin = false } })
             }
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
     }
 
     private var board: some View {
@@ -73,6 +73,10 @@ struct Twenty48View: View {
                 }
             }
             .frame(width: side, height: side)
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(LinearGradient(colors: [Theme.neonAmber, Theme.neonPink], startPoint: .top,
+                                             endPoint: .bottom), lineWidth: 1.5))
+            .shadow(color: Theme.neonAmber.opacity(0.3), radius: 16)
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 18).onEnded(swipe))
         }
@@ -96,14 +100,15 @@ struct Twenty48View: View {
                 .fill(LinearGradient(colors: [Color(uiColor: color.lighter(0.25)), Color(uiColor: color)],
                                      startPoint: .top, endPoint: .bottom))
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(.white.opacity(0.8), lineWidth: 2)
+                .strokeBorder(.white.opacity(0.6), lineWidth: 1.5)
             Text("\(tile.value)")
                 .font(Theme.title(tile.value < 100 ? size * 0.42 : (tile.value < 1_000 ? size * 0.34 : size * 0.27),
                                   weight: .black))
-                .foregroundStyle(light ? Theme.ink : .white)
+                .foregroundStyle(light ? Theme.darkInk : .white)
                 .shadow(color: light ? .clear : Color(uiColor: color.darker(0.5)), radius: 0, y: 2)
         }
         .frame(width: size, height: size)
+        .shadow(color: Color(uiColor: color).opacity(light ? 0.25 : 0.7), radius: tile.value >= 128 ? 14 : 8)
         .scaleEffect(tile.merged ? 1.08 : 1)
         .animation(.spring(response: 0.25, dampingFraction: 0.5), value: tile.merged)
     }

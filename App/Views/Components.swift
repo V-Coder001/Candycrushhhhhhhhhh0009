@@ -14,7 +14,7 @@ struct CandyPressStyle: ButtonStyle {
     }
 }
 
-/// Wide glossy pill button ("Spielen", "Weiter").
+/// Wide glossy pill button ("Spielen", "Weiter") with a neon glow.
 struct CandyCapsuleButton: View {
     let title: String
     let color: UIColor
@@ -31,21 +31,23 @@ struct CandyCapsuleButton: View {
             }
             .candyText(Color(uiColor: color.darker(0.45)))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .padding(.vertical, 15)
             .background(
                 ZStack {
-                    Capsule().fill(Color(uiColor: color.darker(0.35))).offset(y: 5)
                     Capsule()
-                        .fill(LinearGradient(colors: [Color(uiColor: color.lighter(0.35)), Color(uiColor: color)],
+                        .fill(LinearGradient(colors: [Color(uiColor: color.lighter(0.3)), Color(uiColor: color),
+                                                      Color(uiColor: color.darker(0.2))],
                                              startPoint: .top, endPoint: .bottom))
                     Capsule()
-                        .fill(LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0)],
+                        .fill(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)],
                                              startPoint: .top, endPoint: .center))
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 16)
                         .padding(.top, 3)
-                        .padding(.bottom, 18)
-                    Capsule().stroke(.white, lineWidth: 3)
+                        .padding(.bottom, 20)
+                    Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.15)],
+                                                          startPoint: .top, endPoint: .bottom), lineWidth: 1.5)
                 }
+                .shadow(color: Color(uiColor: color).opacity(0.7), radius: 14, y: 4)
             )
         }
         .buttonStyle(CandyPressStyle())
@@ -73,7 +75,7 @@ struct CandyIconButton: View {
     }
 }
 
-/// White card with a candy-pink rim and a ribbon title.
+/// Glass card with a neon rim and a glowing pill title on its top edge.
 struct CandyPanel<Content: View>: View {
     let title: String
     var ribbon: UIColor = Theme.accentUI
@@ -82,8 +84,8 @@ struct CandyPanel<Content: View>: View {
     var body: some View {
         VStack(spacing: 16) {
             Ribbon(text: title, color: ribbon)
-                .offset(y: -38)
-                .padding(.bottom, -38)
+                .offset(y: -44)
+                .padding(.bottom, -44)
             content
         }
         .padding(.horizontal, 22)
@@ -91,22 +93,17 @@ struct CandyPanel<Content: View>: View {
         .padding(.bottom, 24)
         .frame(maxWidth: 350)
         .background(
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(LinearGradient(colors: [.white, Color(uiColor: UIColor(hex: 0xFFEFF8))],
-                                     startPoint: .top, endPoint: .bottom))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 34, style: .continuous)
-                        .strokeBorder(LinearGradient(colors: [Color(uiColor: ribbon.lighter(0.5)),
-                                                              Color(uiColor: ribbon.lighter(0.2))],
-                                                     startPoint: .top, endPoint: .bottom), lineWidth: 5)
-                )
-                .shadow(color: Color(uiColor: ribbon.darker(0.5)).opacity(0.35), radius: 0, y: 6)
-                .shadow(color: .black.opacity(0.2), radius: 18, y: 10)
+            ZStack {
+                RoundedRectangle(cornerRadius: 34, style: .continuous)
+                    .fill(Color(uiColor: UIColor(hex: 0x1A0C42, alpha: 0.92)))
+                GlassShape(cornerRadius: 34, tint: Color(uiColor: ribbon), glow: 0.5)
+            }
+            .shadow(color: .black.opacity(0.4), radius: 24, y: 12)
         )
     }
 }
 
-/// Folded ribbon banner used as a panel title.
+/// Glowing pill used as a panel title.
 struct Ribbon: View {
     let text: String
     let color: UIColor
@@ -121,56 +118,44 @@ struct Ribbon: View {
             .padding(.vertical, 10)
             .background(
                 ZStack {
-                    RibbonShape()
-                        .fill(Color(uiColor: color.darker(0.3)))
-                        .offset(y: 5)
-                    RibbonShape()
-                        .fill(LinearGradient(colors: [Color(uiColor: color.lighter(0.3)), Color(uiColor: color)],
+                    Capsule()
+                        .fill(LinearGradient(colors: [Color(uiColor: color.lighter(0.3)), Color(uiColor: color),
+                                                      Color(uiColor: color.darker(0.2))],
                                              startPoint: .top, endPoint: .bottom))
-                    RibbonShape().stroke(.white, lineWidth: 3)
+                    Capsule()
+                        .fill(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0)],
+                                             startPoint: .top, endPoint: .center))
+                        .padding(.horizontal, 14)
+                        .padding(.top, 2)
+                        .padding(.bottom, 16)
+                    Capsule().strokeBorder(.white.opacity(0.7), lineWidth: 1.5)
                 }
+                .shadow(color: Color(uiColor: color).opacity(0.8), radius: 16)
             )
     }
 }
 
-private struct RibbonShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let notch = rect.height * 0.35
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX - notch, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX + notch, y: rect.midY))
-        path.closeSubpath()
-        return path
-    }
-}
-
-/// Shiny round button, like a hard candy.
+/// Shiny round button, like a hard candy lit from inside.
 struct GlossyCircle: View {
     let color: UIColor
 
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color(uiColor: color.darker(0.4)))
-                .offset(y: 4)
-            Circle()
                 .fill(RadialGradient(colors: [Color(uiColor: color.lighter(0.45)), Color(uiColor: color),
-                                              Color(uiColor: color.darker(0.25))],
+                                              Color(uiColor: color.darker(0.3))],
                                      center: UnitPoint(x: 0.4, y: 0.3), startRadius: 1, endRadius: 44))
-            Circle().stroke(.white, lineWidth: 3)
+            Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0.1)],
+                                                 startPoint: .top, endPoint: .bottom), lineWidth: 1.5)
             GeometryReader { geo in
                 Ellipse()
-                    .fill(LinearGradient(colors: [.white.opacity(0.75), .white.opacity(0.05)],
+                    .fill(LinearGradient(colors: [.white.opacity(0.7), .white.opacity(0.05)],
                                          startPoint: .top, endPoint: .bottom))
                     .frame(width: geo.size.width * 0.58, height: geo.size.height * 0.3)
-                    .position(x: geo.size.width * 0.5, y: geo.size.height * 0.26)
+                    .position(x: geo.size.width * 0.5, y: geo.size.height * 0.24)
             }
         }
-        .shadow(color: Color(uiColor: color.darker(0.5)).opacity(0.35), radius: 4, y: 4)
+        .shadow(color: Color(uiColor: color).opacity(0.75), radius: 10)
     }
 }
 
@@ -299,7 +284,7 @@ struct BoosterBadge: View {
     var enabled = true
 
     var body: some View {
-        let color = enabled ? booster.color : UIColor(hex: 0xA7B7CC)
+        let color = enabled ? booster.color : Theme.lockedUI
         Image(systemName: booster.symbol)
             .font(.system(size: size * 0.4, weight: .black))
             .candyText(Color(uiColor: color.darker(0.45)))
@@ -319,7 +304,7 @@ struct BoosterButton: View {
     var body: some View {
         Button(action: action) {
             BoosterBadge(booster: booster, enabled: count > 0)
-                .overlay(Circle().stroke(Color.white, lineWidth: active ? 4 : 0).padding(-5))
+                .overlay(Circle().stroke(Theme.neonCyan, lineWidth: active ? 3 : 0).padding(-5).shadow(color: Theme.neonCyan, radius: 6))
                 .scaleEffect(active ? 1.12 : 1)
                 .overlay(alignment: .topTrailing) {
                     Text("\(count)")
@@ -327,7 +312,7 @@ struct BoosterButton: View {
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .frame(minWidth: 22, minHeight: 22)
-                        .background(Circle().fill(count > 0 ? Theme.accent : Color(uiColor: UIColor(hex: 0x8C9AAE))))
+                        .background(Circle().fill(count > 0 ? Theme.accent : Color(uiColor: Theme.lockedUI)))
                         .overlay(Circle().stroke(.white, lineWidth: 2))
                         .offset(x: 6, y: -4)
                 }

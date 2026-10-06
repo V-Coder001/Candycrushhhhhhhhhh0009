@@ -30,10 +30,10 @@ struct GamesHomeView: View {
         var color: UIColor {
             switch self {
             case .candy: return Theme.accentUI
-            case .blocks: return UIColor(hex: 0xFF8A14)
-            case .twenty48: return UIColor(hex: 0xFFC727)
-            case .solitaire: return UIColor(hex: 0x2FBF45)
-            case .chess: return UIColor(hex: 0x8B5E3C)
+            case .blocks: return Theme.neonCyanUI
+            case .twenty48: return Theme.neonAmberUI
+            case .solitaire: return Theme.neonMintUI
+            case .chess: return Theme.neonVioletUI
             }
         }
     }
@@ -44,29 +44,35 @@ struct GamesHomeView: View {
         ZStack {
             CandyBackdrop()
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    HStack {
-                        Color.clear.frame(width: 46, height: 46)
-                        Spacer()
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(alignment: .center) {
                         Logo(subtitle: "Spielesammlung")
                         Spacer()
-                        CandyIconButton(symbol: "gearshape.fill", color: Theme.accentUI, label: "Einstellungen",
+                        CandyIconButton(symbol: "gearshape.fill", color: Theme.neonVioletUI, label: "Einstellungen",
                                         size: 46) { showSettings = true }
                     }
+                    Text("Was spielen wir heute?")
+                        .font(Theme.title(17, weight: .bold))
+                        .foregroundStyle(Theme.muted)
+                        .padding(.top, -6)
+
+                    Button { open = .candy } label: { hero }
+                        .buttonStyle(CandyPressStyle())
+
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
                               spacing: 14) {
-                        ForEach(CasualGame.allCases) { game in
+                        ForEach(CasualGame.allCases.filter { $0 != .candy }) { game in
                             Button { open = game } label: { tile(game) }
                                 .buttonStyle(CandyPressStyle())
                         }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 18)
                 .padding(.top, 8)
                 .padding(.bottom, 40)
             }
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
         .fullScreenCover(item: $open) { game in
             screen(for: game)
         }
@@ -94,33 +100,105 @@ struct GamesHomeView: View {
 
     // MARK: Tiles
 
+    /// Big card for the candy puzzle, the heart of the collection.
+    private var hero: some View {
+        let color = Color(uiColor: CasualGame.candy.color)
+        return HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("LEVEL \(currentLevelNumber)")
+                    .font(Theme.title(12, weight: .heavy))
+                    .tracking(2)
+                    .foregroundStyle(Theme.neonCyan)
+                Text(CasualGame.candy.title)
+                    .font(Theme.title(28, weight: .black))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(record(.candy))
+                    .font(Theme.title(14, weight: .bold))
+                    .foregroundStyle(Theme.muted)
+                HStack(spacing: 6) {
+                    Image(systemName: "play.fill")
+                    Text("Weiterspielen")
+                }
+                .font(Theme.title(15, weight: .black))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
+                .background(
+                    Capsule()
+                        .fill(LinearGradient(colors: [Color(uiColor: Theme.neonPinkUI.lighter(0.2)), Theme.neonPink],
+                                             startPoint: .top, endPoint: .bottom))
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.6), lineWidth: 1))
+                        .shadow(color: Theme.neonPink.opacity(0.8), radius: 10)
+                )
+                .padding(.top, 6)
+            }
+            Spacer(minLength: 0)
+            ZStack {
+                Circle()
+                    .fill(RadialGradient(colors: [color.opacity(0.7), color.opacity(0)], center: .center,
+                                         startRadius: 0, endRadius: 80))
+                    .frame(width: 160, height: 160)
+                Image(uiImage: CandyArt.shared.image(for: .plain(.purple), size: 54))
+                    .rotationEffect(.degrees(18))
+                    .offset(x: -42, y: 34)
+                Image(uiImage: CandyArt.shared.image(for: .plain(.yellow), size: 46))
+                    .rotationEffect(.degrees(-20))
+                    .offset(x: 40, y: -40)
+                Image(uiImage: CandyArt.shared.image(for: .plain(.red), size: 100))
+                    .rotationEffect(.degrees(-12))
+                    .shadow(color: color.opacity(0.9), radius: 18)
+            }
+            .frame(width: 130, height: 130)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .glassCard(cornerRadius: 30, tint: color, glow: 0.45)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var currentLevelNumber: Int {
+        Level.campaign.last { progress.isUnlocked($0) }?.id ?? 1
+    }
+
     private func tile(_ game: CasualGame) -> some View {
-        VStack(spacing: 10) {
+        let color = Color(uiColor: game.color)
+        return VStack(alignment: .leading, spacing: 10) {
             icon(game)
                 .frame(width: 84, height: 84)
-            Text(game.title)
-                .font(Theme.title(19, weight: .black))
-                .foregroundStyle(Theme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(record(game))
-                .font(Theme.title(13, weight: .bold))
-                .foregroundStyle(Theme.muted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity)
+                .background(
+                    Circle()
+                        .fill(RadialGradient(colors: [color.opacity(0.55), color.opacity(0)], center: .center,
+                                             startRadius: 0, endRadius: 60))
+                        .frame(width: 130, height: 130)
+                )
+                .padding(.vertical, 6)
+            HStack(alignment: .lastTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(game.title)
+                        .font(Theme.title(19, weight: .black))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text(record(game))
+                        .font(Theme.title(13, weight: .bold))
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                Spacer(minLength: 2)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(color.opacity(0.85)).shadow(color: color, radius: 6))
+            }
         }
+        .padding(16)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .padding(.horizontal, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(.white)
-                .shadow(color: Color(uiColor: game.color.darker(0.4)).opacity(0.35), radius: 0, y: 5)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(Color(uiColor: game.color.lighter(0.2)), lineWidth: 3)
-        )
+        .glassCard(cornerRadius: 26, tint: color, glow: 0.3)
         .accessibilityElement(children: .combine)
     }
 
@@ -143,7 +221,8 @@ struct GamesHomeView: View {
                 .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(LinearGradient(colors: [Color(uiColor: UIColor(hex: 0xFFD866)), Color(uiColor: UIColor(hex: 0xFFB020))],
                                          startPoint: .top, endPoint: .bottom)))
-                .shadow(color: Color(uiColor: UIColor(hex: 0xB07400)), radius: 0, y: 3)
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.white.opacity(0.6), lineWidth: 1.5))
+                .shadow(color: Theme.neonAmber.opacity(0.8), radius: 12)
         case .solitaire:
             ZStack {
                 miniCard("♠", red: false).rotationEffect(.degrees(-12)).offset(x: -14)
@@ -151,11 +230,15 @@ struct GamesHomeView: View {
             }
         case .chess:
             Text("\u{265E}\u{FE0E}")
-                .font(.system(size: 64))
-                .foregroundStyle(Color(uiColor: UIColor(hex: 0x3E2A1A)))
+                .font(.system(size: 60))
+                .foregroundStyle(LinearGradient(colors: [.white, Color(uiColor: Theme.neonVioletUI.lighter(0.5))],
+                                                startPoint: .top, endPoint: .bottom))
+                .shadow(color: Theme.neonViolet, radius: 10)
                 .frame(width: 80, height: 80)
-                .background(Circle().fill(Color(uiColor: UIColor(hex: 0xF0D9B5))))
-                .overlay(Circle().stroke(Color(uiColor: UIColor(hex: 0xB58863)), lineWidth: 4))
+                .background(Circle().fill(Color(uiColor: UIColor(hex: 0x2A1668))))
+                .overlay(Circle().strokeBorder(LinearGradient(colors: [Theme.neonCyan, Theme.neonViolet],
+                                                              startPoint: .top, endPoint: .bottom), lineWidth: 2.5))
+                .shadow(color: Theme.neonViolet.opacity(0.8), radius: 10)
         }
     }
 
@@ -164,6 +247,7 @@ struct GamesHomeView: View {
             .fill(LinearGradient(colors: [Color(uiColor: UIColor(hex: hex).lighter(0.3)), Color(uiColor: UIColor(hex: hex))],
                                  startPoint: .top, endPoint: .bottom))
             .frame(width: 24, height: 24)
+            .shadow(color: Color(uiColor: UIColor(hex: hex)).opacity(0.8), radius: 5)
     }
 
     private func miniCard(_ suit: String, red: Bool) -> some View {

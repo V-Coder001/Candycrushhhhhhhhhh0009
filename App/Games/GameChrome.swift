@@ -13,8 +13,10 @@ struct GameTopBar<Trailing: View>: View {
                             action: onClose)
             Spacer(minLength: 4)
             Text(title)
-                .font(Theme.title(24, weight: .black))
-                .candyText()
+                .font(Theme.title(26, weight: .black))
+                .foregroundStyle(LinearGradient(colors: [.white, Color(uiColor: Theme.neonPinkUI.lighter(0.55))],
+                                                startPoint: .top, endPoint: .bottom))
+                .shadow(color: Theme.neonPink.opacity(0.8), radius: 10)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 4)
@@ -25,31 +27,29 @@ struct GameTopBar<Trailing: View>: View {
     }
 }
 
-/// Blue score capsule ("Punkte 1.240").
+/// Glass score card ("PUNKTE 1.240").
 struct ScoreBadge: View {
     let label: String
     let value: String
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text(label)
-                .font(Theme.title(12, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.9))
+        VStack(spacing: 1) {
+            Text(label.uppercased())
+                .font(Theme.title(11, weight: .heavy))
+                .tracking(1.5)
+                .foregroundStyle(Theme.muted)
             Text(value)
-                .font(Theme.title(22, weight: .black))
+                .font(Theme.title(24, weight: .black))
                 .monospacedDigit()
-                .candyText()
+                .candyText(Theme.neonPink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+                .contentTransition(.numericText())
         }
-        .frame(minWidth: 96)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.banner)
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(.white, lineWidth: 2.5))
-                .shadow(color: Theme.bannerEdge.opacity(0.5), radius: 0, y: 3)
-        )
+        .frame(minWidth: 110)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .glassCard(cornerRadius: 18, glow: 0.25)
         .accessibilityElement(children: .combine)
     }
 }
@@ -65,7 +65,7 @@ struct GameOverCard: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.35).ignoresSafeArea()
+            Color.black.opacity(0.55).ignoresSafeArea()
             CandyPanel(title: title) {
                 VStack(spacing: 18) {
                     Text(message)
